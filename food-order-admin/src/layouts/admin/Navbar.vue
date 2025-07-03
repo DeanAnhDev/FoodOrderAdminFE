@@ -17,10 +17,6 @@
       >
         <i class="fa-solid fa-bars text-base text-gray-700"></i>
       </button>
-      <!-- Icon tìm kiếm (kính lúp) -->
-      <button class="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow">
-        <i class="fa-solid fa-magnifying-glass text-sm text-gray-700"></i>
-      </button>
     </div>
 
     <!-- Right: Actions -->
