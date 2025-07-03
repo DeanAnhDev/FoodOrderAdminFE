@@ -1,23 +1,39 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import AccountManagementView from '@/views/AccountManagementView.vue'
+import CategoryManagementView from '@/views/CategoryManagementView.vue'
+import ComboManagementView from '@/views/ComboManagementView.vue'
+import FoodManagementView from '@/views/FoodManagementView.vue'
+import Layout from '@/layouts/admin/Layout.vue'
+import DashboardView from '@/views/DashBoardView.vue'
+
+const routes = [
+  {
+    path: '/',
+    component: Layout,
+    children: [
+      { path: '', name: 'dashboard', component: DashboardView },
+      { path: 'combo', name: 'combo', component: ComboManagementView },
+      { path: 'food', name: 'food', component: FoodManagementView },
+      { path: 'category', name: 'category', component: CategoryManagementView },
+      { path: 'account', name: 'account', component: AccountManagementView },
+    ],
+  },
+
+  // Nếu muốn dùng auth layout, mở phần này ra
+  // {
+  //   path: '/auth',
+  //   component: generallayout,
+  //   children: [
+  //     { path: '', name: 'Login', component: Login },
+  //     { path: 'register', name: 'Register', component: Register },
+  //     { path: 'forgotpassword', name: 'ForgotPassword', component: forgotpassword },
+  //   ]
+  // }
+]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: HomeView,
-    },
-    {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
-    },
-  ],
+  routes,
 })
 
 export default router
