@@ -1,13 +1,13 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 w-[500px] relative shadow-2xl ring-1 ring-black/10 backdrop-blur-none">
+    <div class="bg-white rounded-lg p-6 w-[500px] relative shadow-2xl ring-1 ring-black/10 animate-fade-in">
       <h2 class="text-lg font-bold mb-4">Cập nhật danh mục</h2>
 
       <form @submit.prevent="handleSubmit">
         <!-- Tên danh mục -->
         <div class="mb-3">
           <label class="block text-sm font-medium">Tên danh mục</label>
-          <input v-model="form.categoryName" class="w-full border p-2 rounded" required />
+          <input ref="firstInput" v-model="form.categoryName" class="w-full border p-2 rounded" required />
         </div>
 
         <!-- Mô tả -->
@@ -27,6 +27,7 @@
                 v-if="form.images?.url"
                 :src="form.images.thumbnailUrl || form.images.url"
                 class="w-full h-full object-cover"
+                alt="Ảnh danh mục"
               />
               <span v-else class="text-xs text-gray-400">Chưa có ảnh</span>
             </div>
@@ -48,15 +49,50 @@
         <!-- Nút hành động -->
         <div class="flex justify-end gap-2 mt-4">
           <button type="button" @click="emit('close')" class="px-4 py-2 bg-gray-300 rounded">Hủy</button>
-          <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Cập nhật</button>
+          <button
+            type="submit"
+            :disabled="loading"
+            class="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50 flex items-center gap-2"
+          >
+            <svg
+              v-if="loading"
+              class="w-4 h-4 animate-spin"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
+              />
+            </svg>
+            {{ loading ? 'Đang cập nhật...' : 'Cập nhật' }}
+          </button>
         </div>
       </form>
     </div>
   </div>
 </template>
+<style scoped>
+@keyframes fade-in {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+</style>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
+import { useToast } from 'vue-toastification'
 import { useUploadStore } from '@/stores/uploadStore'
 import { useCategoryStore } from '@/stores/categoryStore'
 
@@ -66,8 +102,12 @@ const props = defineProps({
 })
 const emit = defineEmits(['close', 'updated'])
 
+const toast = useToast()
 const uploadStore = useUploadStore()
 const categoryStore = useCategoryStore()
+
+const firstInput = ref(null)
+const loading = ref(false)
 
 const form = ref({
   foodCategoryId: 0,
@@ -81,8 +121,9 @@ const form = ref({
   }
 })
 
-watch(() => props.isOpen, (newVal) => {
-  if (newVal && props.categoryData) {
+// Khi mở modal: gán dữ liệu + focus input
+watch(() => props.isOpen, (val) => {
+  if (val && props.categoryData) {
     form.value = {
       foodCategoryId: props.categoryData.foodCategoryId,
       categoryName: props.categoryData.categoryName || '',
@@ -94,6 +135,7 @@ watch(() => props.isOpen, (newVal) => {
         name: ''
       }
     }
+    nextTick(() => firstInput.value?.focus())
   }
 })
 
@@ -101,33 +143,40 @@ const handleImageUpload = async (e) => {
   const file = e.target.files[0]
   if (!file) return
 
-  // Nếu đã có ảnh cũ → xoá trước
-  const oldImageId = form.value.images.id
-  if (oldImageId) {
-    const ok = await uploadStore.remove(oldImageId)
-    if (!ok) {
-      console.warn('Không xoá được ảnh cũ')
-    }
+  const oldId = form.value.images.id
+  if (oldId) {
+    const ok = await uploadStore.remove(oldId)
+    if (!ok) toast.warning('Không thể xoá ảnh cũ!')
   }
 
   try {
     const id = crypto.randomUUID()
     const imageData = await uploadStore.upload(file, id)
     form.value.images = imageData
+    toast.success('Tải ảnh thành công!')
   } catch (error) {
     console.error('Lỗi upload ảnh:', error)
-    alert('Upload ảnh thất bại')
+    toast.error('Tải ảnh thất bại!')
   }
 }
 
 const handleSubmit = async () => {
+  if (!form.value.images?.url) {
+    toast.warning('Vui lòng chọn ảnh danh mục!')
+    return
+  }
+
+  loading.value = true
   try {
     await categoryStore.updateCategory(form.value)
+    toast.success('Cập nhật danh mục thành công!')
     emit('updated')
     emit('close')
   } catch (err) {
     console.error('Lỗi cập nhật danh mục:', err)
-    alert('Cập nhật thất bại')
+    toast.error('Cập nhật thất bại!')
+  } finally {
+    loading.value = false
   }
 }
 </script>

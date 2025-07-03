@@ -1,13 +1,13 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 w-[500px] relative shadow-2xl ring-1 ring-black/10 backdrop-blur-none">
+    <div class="bg-white rounded-lg p-6 w-[500px] relative shadow-2xl ring-1 ring-black/10 backdrop-blur-none animate-fade-in">
       <h2 class="text-lg font-bold mb-4">Thêm danh mục mới</h2>
 
       <form @submit.prevent="handleSubmit">
         <!-- Tên danh mục -->
         <div class="mb-3">
           <label class="block text-sm font-medium">Tên danh mục</label>
-          <input v-model="form.categoryName" class="w-full border p-2 rounded" required />
+          <input ref="firstInput" v-model="form.categoryName" class="w-full border p-2 rounded" required />
         </div>
 
         <!-- Mô tả -->
@@ -31,6 +31,7 @@
                   v-if="form.images?.url"
                   :src="form.images.thumbnailUrl || form.images.url"
                   class="w-full h-full object-cover"
+                  alt="Ảnh danh mục"
                 />
                 <span v-else class="text-xs text-gray-400">Chưa có ảnh</span>
               </template>
@@ -53,14 +54,32 @@
 
         <!-- Nút hành động -->
         <div class="flex justify-end gap-2 mt-4">
-          <button type="button" @click="emit('close')" class="px-4 py-2 bg-gray-300 rounded" :disabled="isSubmitting">
+          <button
+            type="button"
+            @click="emit('close')"
+            class="px-4 py-2 bg-gray-300 rounded"
+            :disabled="isSubmitting"
+          >
             Hủy
           </button>
           <button
             type="submit"
-            class="px-4 py-2 bg-blue-600 text-white rounded"
+            class="px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2"
             :disabled="!form.images.url || isSubmitting"
           >
+            <svg
+              v-if="isSubmitting"
+              class="w-4 h-4 animate-spin"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
+              />
+            </svg>
             <span v-if="isSubmitting">Đang lưu...</span>
             <span v-else>Lưu</span>
           </button>
@@ -69,19 +88,38 @@
     </div>
   </div>
 </template>
+<style scoped>
+@keyframes fade-in {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+</style>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { useUploadStore } from '@/stores/uploadStore'
 import { useCategoryStore } from '@/stores/categoryStore'
+import { useToast } from 'vue-toastification'
 
-const props = defineProps({
-  isOpen: Boolean
-})
+const props = defineProps({ isOpen: Boolean })
 const emit = defineEmits(['close', 'created'])
 
 const uploadStore = useUploadStore()
 const categoryStore = useCategoryStore()
+const toast = useToast()
+
+const firstInput = ref(null)
+const isUploading = ref(false)
+const isSubmitting = ref(false)
 
 const form = ref({
   categoryName: '',
@@ -94,13 +132,11 @@ const form = ref({
   }
 })
 
-const isUploading = ref(false)
-const isSubmitting = ref(false)
-
+// Reset khi mở modal
 watch(
   () => props.isOpen,
-  (newVal) => {
-    if (newVal) {
+  (val) => {
+    if (val) {
       form.value = {
         categoryName: '',
         description: '',
@@ -113,6 +149,7 @@ watch(
       }
       isUploading.value = false
       isSubmitting.value = false
+      nextTick(() => firstInput.value?.focus())
     }
   }
 )
@@ -121,20 +158,17 @@ const handleImageUpload = async (e) => {
   const file = e.target.files[0]
   if (!file) return
 
-  const oldImageId = form.value.images.id
-  if (oldImageId) {
-    await uploadStore.remove(oldImageId)
-  }
+  const oldId = form.value.images.id
+  if (oldId) await uploadStore.remove(oldId)
 
-  const id = crypto.randomUUID()
   isUploading.value = true
-
   try {
-    const imageData = await uploadStore.upload(file, id)
+    const imageData = await uploadStore.upload(file, crypto.randomUUID())
     form.value.images = imageData
-  } catch (error) {
-    console.error('Lỗi upload ảnh:', error)
-    alert('Upload ảnh thất bại')
+    toast.success('Tải ảnh thành công!')
+  } catch (err) {
+    console.error('Lỗi upload:', err)
+    toast.error('Upload ảnh thất bại!')
   } finally {
     isUploading.value = false
   }
@@ -142,19 +176,19 @@ const handleImageUpload = async (e) => {
 
 const handleSubmit = async () => {
   if (!form.value.images.url) {
-    alert('Vui lòng chọn ảnh trước khi lưu.')
+    toast.warning('Vui lòng chọn ảnh danh mục!')
     return
   }
 
   isSubmitting.value = true
   try {
     await categoryStore.createCategory(form.value)
-    alert('Thêm danh mục thành công!')
+    toast.success('Thêm danh mục thành công!')
     emit('created')
     emit('close')
   } catch (err) {
     console.error('Lỗi tạo danh mục:', err)
-    alert('Thêm danh mục thất bại')
+    toast.error('Thêm danh mục thất bại!')
   } finally {
     isSubmitting.value = false
   }

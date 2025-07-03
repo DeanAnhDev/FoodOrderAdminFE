@@ -1,6 +1,6 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 w-[500px] relative shadow-xl">
+    <div class="bg-white rounded-lg p-6 w-[500px] relative shadow-xl animate-fade-in">
       <!-- Header -->
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-gray-800">Chi tiết món ăn</h2>
@@ -73,6 +73,21 @@
     </div>
   </div>
 </template>
+<style scoped>
+@keyframes fade-in {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+</style>
 
 <script setup>
 import { defineProps, defineEmits } from 'vue'
