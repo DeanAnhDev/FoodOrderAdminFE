@@ -46,10 +46,6 @@
                   title="Sửa">
                   <i class="fa-solid fa-pen-to-square"></i>
                 </button>
-                <button @click="deleteCategory(category.foodCategoryId)"
-                  class="text-red-500 hover:text-red-600 transition" title="Xoá">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
               </div>
             </td>
           </tr>
@@ -113,12 +109,6 @@ const editCategory = (category) => {
   showEditModal.value = true
 }
 
-const deleteCategory = async (id) => {
-  if (confirm('Bạn có chắc muốn xoá danh mục này?')) {
-    await store.deleteCategory(id)
-    await store.fetchCategories()
-  }
-}
 
 const viewCategory = (category) => {
   selectedCategory.value = category

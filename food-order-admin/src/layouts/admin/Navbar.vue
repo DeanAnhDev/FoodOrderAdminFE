@@ -21,14 +21,14 @@
 
     <!-- Right: Actions -->
     <div class="flex items-center pl-2 gap-[10px]">
-      <!-- Nút chuyển chế độ sáng/tối -->
+      <!-- Nút chuyển chế độ sáng/tối
       <button class="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow">
         <i :class="'fa-solid fa-moon text-gray-700 text-sm'"></i>
       </button>
-      <!-- Icon cài đặt -->
+   
       <button class="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow">
         <i class="fa-solid fa-gear text-base text-gray-700"></i>
-      </button>
+      </button>  -->
       <!-- Icon thông báo có chấm tròn màu xanh -->
       <div class="relative">
         <button class="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow">
