@@ -1,19 +1,31 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 w-[500px] relative shadow-2xl ring-1 ring-black/10 backdrop-blur-none animate-fade-in">
+    <div class="bg-white rounded-lg p-6 w-[500px] relative shadow-2xl ring-1 ring-black/10 animate-fade-in">
       <h2 class="text-lg font-bold mb-4">Thêm danh mục mới</h2>
 
       <form @submit.prevent="handleSubmit">
         <!-- Tên danh mục -->
         <div class="mb-3">
           <label class="block text-sm font-medium">Tên danh mục</label>
-          <input ref="firstInput" v-model="form.categoryName" class="w-full border p-2 rounded" required />
+          <input
+            ref="firstInput"
+            v-model="form.categoryName"
+            maxlength="100"
+            class="w-full border p-2 rounded"
+            placeholder="Nhập tên danh mục"
+          />
         </div>
 
         <!-- Mô tả -->
         <div class="mb-3">
           <label class="block text-sm font-medium">Mô tả</label>
-          <textarea v-model="form.description" class="w-full border p-2 rounded"></textarea>
+          <textarea
+            v-model="form.description"
+            maxlength="500"
+            rows="3"
+            class="w-full border p-2 rounded"
+            placeholder="Nhập mô tả"
+          />
         </div>
 
         <!-- Ảnh đại diện -->
@@ -65,7 +77,7 @@
           <button
             type="submit"
             class="px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2"
-            :disabled="!form.images.url || isSubmitting"
+            :disabled="isSubmitting"
           >
             <svg
               v-if="isSubmitting"
@@ -88,6 +100,7 @@
     </div>
   </div>
 </template>
+
 <style scoped>
 @keyframes fade-in {
   0% {
@@ -175,10 +188,14 @@ const handleImageUpload = async (e) => {
 }
 
 const handleSubmit = async () => {
-  if (!form.value.images.url) {
-    toast.warning('Vui lòng chọn ảnh danh mục!')
-    return
-  }
+  const name = form.value.categoryName.trim()
+  const desc = form.value.description.trim()
+  const image = form.value.images.url
+
+  if (!name) return toast.warning('Vui lòng nhập tên danh mục!')
+  if (name.length > 100) return toast.warning('Tên danh mục không được vượt quá 100 ký tự!')
+  if (desc.length > 500) return toast.warning('Mô tả không được vượt quá 500 ký tự!')
+  if (!image) return toast.warning('Vui lòng chọn ảnh danh mục!')
 
   isSubmitting.value = true
   try {
