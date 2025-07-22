@@ -89,9 +89,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-3">
-                            <span :class="food.isOutOfStock ? 'text-red-600' : 'text-green-600'">
-                                {{ food.isOutOfStock ? 'Hết hàng' : 'Còn hàng' }}
-                            </span>
+                            {{ food.quantity }}
                         </td>
                         <td class="px-6 py-3 text-gray-700">{{ food.sold || 0 }}</td>
                         <td class="px-6 py-3 text-gray-700">{{ formatDate(food.createdAt) }}</td>

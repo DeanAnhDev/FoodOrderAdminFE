@@ -23,9 +23,9 @@
             </p>
             <p>
               <span class="font-semibold">🏬 Kho:</span>
-              <span :class="combo.isOutOfStock ? 'text-red-600' : 'text-blue-600'">
-                {{ combo.isOutOfStock ? 'Hết hàng' : 'Còn hàng' }}
-              </span>
+           
+                {{ combo.quantity }}
+ 
             </p>
           </div>
           <div class="space-y-2">
@@ -49,7 +49,6 @@
                   <th class="p-3">Tên món</th>
                   <th class="p-3">Giá</th>
                   <th class="p-3">Trạng thái</th>
-                  <th class="p-3">Kho</th>
                   <th class="p-3">Số lượng</th>
                 </tr>
               </thead>
@@ -64,11 +63,6 @@
                   <td class="p-3">
                     <span :class="item.food.status ? 'text-green-600' : 'text-gray-500'">
                       {{ item.food.status ? 'Hiển thị' : 'Ẩn' }}
-                    </span>
-                  </td>
-                  <td class="p-3">
-                    <span :class="item.food.isOutOfStock ? 'text-red-600' : 'text-blue-600'">
-                      {{ item.food.isOutOfStock ? 'Hết hàng' : 'Còn hàng' }}
                     </span>
                   </td>
                   <td class="p-3">{{ item.quantity }}</td>

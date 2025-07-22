@@ -29,11 +29,9 @@
               <option :value="false">Ẩn</option>
             </select>
 
-            <select v-model="form.isOutOfStock"
-              class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option :value="false">Còn hàng</option>
-              <option :value="true">Hết hàng</option>
-            </select>
+            <input v-model.number="form.quantity" type="number" min="0" placeholder="Số lượng còn lại"
+              class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
           </div>
 
           <textarea v-model="form.description" placeholder="Mô tả combo"
@@ -102,7 +100,6 @@
                 <th class="p-3">Tên món</th>
                 <th class="p-3">Giá</th>
                 <th class="p-3">Trạng thái</th>
-                <th class="p-3">Kho</th>
                 <th class="p-3">Số lượng</th>
                 <th class="p-3">Hành động</th>
               </tr>
@@ -118,11 +115,6 @@
                 <td class="p-3">
                   <span :class="getFood(item.foodId)?.status ? 'text-green-600' : 'text-gray-500'">
                     {{ getFood(item.foodId)?.status ? 'Hiển thị' : 'Ẩn' }}
-                  </span>
-                </td>
-                <td class="p-3">
-                  <span :class="getFood(item.foodId)?.isOutOfStock ? 'text-red-600' : 'text-blue-600'">
-                    {{ getFood(item.foodId)?.isOutOfStock ? 'Hết hàng' : 'Còn hàng' }}
                   </span>
                 </td>
                 <td class="p-3">
@@ -171,12 +163,13 @@ const form = ref({
   comboName: '',
   foodCategoryId: '',
   price: 0,
+  quantity: 0,
   description: '',
   images: null,
   status: true,
-  isOutOfStock: false,
   foods: []
 })
+
 const searchQuery = ref('')
 
 const filteredAvailableFoods = computed(() => {
@@ -186,7 +179,6 @@ const filteredAvailableFoods = computed(() => {
     return (
       !selectedIds.includes(food.foodId) &&
       food.status === true &&
-      food.isOutOfStock === false &&
       matchesSearch
     )
   })
@@ -250,6 +242,11 @@ const submit = async () => {
     return toast.error('Số lượng mỗi món ăn phải từ 1 trở lên.');
   }
 
+  if (form.value.quantity === null || form.value.quantity < 0) {
+    return toast.error('Số lượng combo không được nhỏ hơn 0.');
+  }
+
+
   // Kiểm tra trạng thái và kho của từng món ăn trong combo
   const invalidFoods = form.value.foods.filter(f => {
     const food = comboStore.allFoods.find(item => item.foodId === f.foodId);
@@ -287,7 +284,7 @@ watch(() => props.comboId, async (id) => {
       price: combo.price,
       description: combo.description,
       status: combo.status,
-      isOutOfStock: combo.isOutOfStock,
+      quantity: combo.quantity,
       images: combo.images,
       foods: combo.comboDetails.map(d => ({
         foodId: d.food.foodId,

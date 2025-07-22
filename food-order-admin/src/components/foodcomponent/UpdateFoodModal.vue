@@ -41,14 +41,12 @@
           </select>
         </div>
 
-        <!-- Tình trạng kho -->
+        <!-- Số lượng -->
         <div class="mb-3">
-          <label class="block text-sm font-medium">Tình trạng kho</label>
-          <select v-model="form.isOutOfStock" class="w-full border p-2 rounded">
-            <option :value="false">Còn hàng</option>
-            <option :value="true">Hết hàng</option>
-          </select>
+          <label class="block text-sm font-medium">Số lượng</label>
+          <input type="number" v-model.number="form.quantity" class="w-full border p-2 rounded" min="0" required />
         </div>
+
 
         <!-- Ảnh -->
         <div class="mb-3">
@@ -97,11 +95,13 @@
     transform: scale(0.95);
     opacity: 0;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
   }
 }
+
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
 }
@@ -135,7 +135,7 @@ const form = ref({
   description: '',
   price: 0,
   status: true,
-  isOutOfStock: false,
+  quantity: 0,
   images: {
     id: '',
     url: '',
@@ -143,6 +143,7 @@ const form = ref({
     name: ''
   }
 })
+
 
 const resetForm = () => {
   form.value = {
@@ -152,7 +153,7 @@ const resetForm = () => {
     description: '',
     price: 0,
     status: true,
-    isOutOfStock: false,
+    quantity: 0,
     images: {
       id: '',
       url: '',
@@ -161,6 +162,7 @@ const resetForm = () => {
     }
   }
 }
+
 
 // Gán dữ liệu món ăn vào form khi mở modal
 watch(

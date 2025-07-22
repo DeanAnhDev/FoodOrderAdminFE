@@ -52,15 +52,18 @@
         <!-- Tình trạng kho -->
         <div>
           <strong class="block text-gray-600">Kho:</strong>
-          <p :class="food.isOutOfStock ? 'text-red-600' : 'text-green-600'">
-            {{ food.isOutOfStock ? 'Hết hàng' : 'Còn hàng' }}
-          </p>
+            <p>{{food.quantity }}</p>
         </div>
 
         <!-- Ngày tạo -->
         <div>
           <strong class="block text-gray-600">Ngày tạo:</strong>
           <p>{{ formatDate(food.createdAt) }}</p>
+        </div>
+
+        <div>
+          <strong class="block text-gray-600">Mô tả</strong>
+          <p>{{ food.description }}</p>
         </div>
       </div>
 

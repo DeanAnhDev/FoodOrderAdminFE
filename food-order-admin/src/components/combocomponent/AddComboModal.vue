@@ -27,6 +27,9 @@
 
           <input v-model.number="form.price" type="number" placeholder="Giá combo"
             class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-400" />
+          <input v-model.number="form.quantity" type="number" placeholder="Số lượng combo" min="1"
+            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-400" />
+
 
           <!-- Ảnh combo -->
           <div>
@@ -62,8 +65,7 @@
                 <p class="font-medium">{{ food.foodName }}</p>
                 <p class="text-sm text-gray-500">{{ formatPrice(food.price) }}</p>
               </div>
-              <button @click="addFoodToCombo(food)"
-                class="text-sm text-blue-600 hover:text-blue-800 font-semibold">
+              <button @click="addFoodToCombo(food)" class="text-sm text-blue-600 hover:text-blue-800 font-semibold">
                 + Thêm
               </button>
             </div>
@@ -82,7 +84,6 @@
                 <th class="p-3">Tên món</th>
                 <th class="p-3">Giá</th>
                 <th class="p-3">Trạng thái</th>
-                <th class="p-3">Kho</th>
                 <th class="p-3">Số lượng</th>
                 <th class="p-3">Hành động</th>
               </tr>
@@ -97,11 +98,6 @@
                 <td class="p-3">
                   <span :class="getFood(item.foodId)?.status ? 'text-green-600' : 'text-gray-400'">
                     {{ getFood(item.foodId)?.status ? 'Hiển thị' : 'Ẩn' }}
-                  </span>
-                </td>
-                <td class="p-3">
-                  <span :class="getFood(item.foodId)?.isOutOfStock ? 'text-red-600' : 'text-blue-600'">
-                    {{ getFood(item.foodId)?.isOutOfStock ? 'Hết hàng' : 'Còn hàng' }}
                   </span>
                 </td>
                 <td class="p-3">
@@ -155,6 +151,7 @@ const form = ref({
   price: 0,
   description: '',
   images: null,
+  quantity: 1,
   foods: []
 })
 
@@ -165,6 +162,7 @@ const resetForm = () => {
     price: 0,
     description: '',
     images: null,
+    quantity: 1,
     foods: []
   }
   searchQuery.value = ''
@@ -179,9 +177,8 @@ const availableFoods = computed(() => {
   return foodStore.foods.filter(f => {
     const isNotSelected = !form.value.foods.some(i => i.foodId === f.foodId)
     const isVisible = f.status === true
-    const isInStock = f.isOutOfStock === false
     const matchesSearch = f.foodName.toLowerCase().includes(searchQuery.value.toLowerCase())
-    return isNotSelected && isVisible && isInStock && matchesSearch
+    return isNotSelected && isVisible && matchesSearch
   })
 })
 
@@ -220,6 +217,8 @@ const submit = async () => {
   if (!form.value.images?.url) return toast.error('Vui lòng tải ảnh combo.')
   if (form.value.foods.length === 0) return toast.error('Combo phải có ít nhất 1 món ăn.')
   if (form.value.foods.some(f => !f.quantity || f.quantity < 1)) return toast.error('Số lượng món ăn phải ≥ 1.')
+  if (!form.value.quantity || form.value.quantity < 1) return toast.error('Số lượng combo phải ≥ 1.')
+
 
   try {
     await comboStore.createCombo(form.value)

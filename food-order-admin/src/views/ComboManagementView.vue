@@ -79,9 +79,7 @@
               </span>
             </td>
             <td class="px-6 py-3">
-              <span :class="combo.isOutOfStock ? 'text-red-600' : 'text-green-600 font-medium'">
-                {{ combo.isOutOfStock ? 'Hết hàng' : 'Còn hàng' }}
-              </span>
+                {{ combo.quantity}}
             </td>
             <td class="px-6 py-3">{{ combo.sold || 0 }}</td>
             <td class="px-6 py-3">{{ formatDate(combo.createdAt) }}</td>
