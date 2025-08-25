@@ -57,6 +57,7 @@
         </transition>
       </div>
 
+      
       <router-link
         :to="{ name: 'food' }"
         class="w-[230px] h-[50px] flex items-center gap-2 font-inter font-extralight text-sm text-left pl-[21px] hover:bg-[#5c6e91] transition"
@@ -79,6 +80,14 @@
       >
         <i class="fa-solid fa-list"></i>
         Loại đồ ăn
+      </router-link>
+
+       <router-link
+        :to="{ name: 'voucher' }"
+        class="w-[230px] h-[50px] flex items-center gap-2 font-inter font-extralight text-sm text-left pl-[21px] hover:bg-[#5c6e91] transition"
+      >
+        <i class="fa-solid fa-boxes-stacked"></i>
+        Quản lý Voucher
       </router-link>
 
       <!-- <router-link
