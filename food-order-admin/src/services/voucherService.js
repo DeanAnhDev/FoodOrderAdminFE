@@ -1,30 +1,21 @@
 import axiosClient from '@/axiosClient'
 
-const voucherService = {
-  // Lấy tất cả voucher (có phân trang, filter)
-  getAll(params) {
-    return axiosClient.get('/Voucher', { params }).then((res) => res.data)
-  },
-
-  // Lấy chi tiết 1 voucher theo id
-  getById(id) {
-    return axiosClient.get(`/Voucher/${id}`).then((res) => res.data)
-  },
-
-  // Tạo mới voucher
-  create(data) {
-    return axiosClient.post('/Voucher', data)
-  },
-
-  // Cập nhật voucher
-  update(voucher) {
-    return axiosClient.put('/Voucher', voucher) // không cần bọc { voucherDto: ... } nữa
-  },
-
-  // Xóa voucher
-  delete(id) {
-    return axiosClient.delete(`/Voucher/${id}`)
-  },
+export const getVouchers = async (params) => {
+  return axiosClient.get('/Voucher', { params })
 }
 
-export default voucherService
+export const getVoucherById = async (id) => {
+  return axiosClient.get(`/Voucher/${id}`)
+}
+
+export const addVoucher = async (voucher) => {
+  return axiosClient.post('/Voucher', voucher)
+}
+
+export const updateVoucher = async (voucher) => {
+  return axiosClient.put('/Voucher', voucher)
+}
+
+export const deleteVoucher = async (id) => {
+  return axiosClient.delete(`/Voucher/${id}`)
+}

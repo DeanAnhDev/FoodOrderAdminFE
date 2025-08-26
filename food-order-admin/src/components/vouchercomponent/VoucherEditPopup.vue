@@ -1,77 +1,94 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div class="bg-white rounded-lg shadow-lg w-[600px] p-6 relative">
-      <!-- Nút đóng -->
-      <button @click="$emit('close')" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
-        ✕
-      </button>
+  <div v-if="visible" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative animate-fade-in">
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Sửa Voucher</h2>
+        <button @click="close" class="text-gray-500 hover:text-gray-700 text-xl">&times;</button>
+      </div>
 
-      <h2 class="text-xl font-bold mb-4">Chỉnh sửa Voucher</h2>
-
-      <!-- Form chỉnh sửa -->
-      <form @submit.prevent="updateVoucher" class="space-y-4">
+      <!-- Form -->
+      <form @submit.prevent="submitForm" class="space-y-4">
+        <!-- Code -->
         <div>
-          <label class="block font-medium">Mã Voucher</label>
-          <input v-model="form.code" type="text" class="w-full border p-2 rounded" required />
+          <label class="block text-sm font-medium mb-1">Mã Voucher</label>
+          <input v-model="form.code" type="text"
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none" required />
         </div>
 
+        <!-- Giá trị giảm -->
         <div>
-          <label class="block font-medium">Mô tả</label>
-          <textarea v-model="form.description" class="w-full border p-2 rounded"></textarea>
+          <label class="block text-sm font-medium mb-1">Giá trị giảm</label>
+          <input v-model.number="form.discountAmount" type="number" min="0"
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none" required />
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block font-medium">Giảm (%)</label>
-            <input v-model.number="form.discountPercent" type="number" class="w-full border p-2 rounded" />
-          </div>
-          <div>
-            <label class="block font-medium">Giảm tiền (vnđ)</label>
-            <input v-model.number="form.discountAmount" type="number" class="w-full border p-2 rounded" />
-          </div>
-        </div>
-
+        <!-- Loại -->
         <div>
-          <label class="block font-medium">Giảm tối đa</label>
-          <input v-model.number="form.maxDiscountAmount" type="number" class="w-full border p-2 rounded" />
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block font-medium">Ngày bắt đầu</label>
-            <input v-model="form.startDate" type="date" class="w-full border p-2 rounded" />
-          </div>
-          <div>
-            <label class="block font-medium">Ngày kết thúc</label>
-            <input v-model="form.endDate" type="date" class="w-full border p-2 rounded" />
-          </div>
-        </div>
-
-        <div>
-          <label class="block font-medium">Số lượng</label>
-          <input v-model.number="form.quantity" type="number" class="w-full border p-2 rounded" />
-        </div>
-
-        <div>
-          <label class="block font-medium">Đơn tối thiểu</label>
-          <input v-model.number="form.minOrderAmount" type="number" class="w-full border p-2 rounded" />
-        </div>
-
-        <div>
-          <label class="block font-medium">Trạng thái</label>
-          <select v-model="form.isActive" class="w-full border p-2 rounded">
-            <option :value="true">Đang hoạt động</option>
-            <option :value="false">Ngưng</option>
+          <label class="block text-sm font-medium mb-1">Loại</label>
+          <select v-model="form.type"
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none">
+            <option value="Percent">Giảm theo %</option>
+            <option value="Amount">Giảm theo số tiền</option>
           </select>
         </div>
 
-        <!-- Button -->
-        <div class="flex justify-end space-x-2 mt-4">
-          <button type="button" @click="$emit('close')" class="px-4 py-2 bg-gray-400 text-white rounded">
+        <!-- Số lượng -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Số lượng</label>
+          <input v-model.number="form.quantity" type="number" min="0"
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none" required />
+        </div>
+
+        <!-- Đơn tối thiểu -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Đơn tối thiểu</label>
+          <input v-model.number="form.minOrderPrice" type="number" min="0"
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none" />
+        </div>
+
+        <!-- Giảm tối đa -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Giảm tối đa</label>
+          <input v-model.number="form.maxDiscountPrice" type="number" min="0"
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none" />
+        </div>
+
+        <!-- Ngày bắt đầu & kết thúc -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Ngày bắt đầu</label>
+            <input type="date" v-model="form.startDate" :min="today"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none" required />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Ngày kết thúc</label>
+            <input type="date" v-model="form.endDate" :min="form.startDate || today"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none" required />
+          </div>
+        </div>
+
+        <!-- Trạng thái -->
+        <div class="flex items-center mt-2">
+          <input v-model="form.isActive" type="checkbox" class="mr-2" id="isActive" />
+          <label for="isActive">Đang hoạt động</label>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-2 mt-6">
+          <button type="button" @click="close" class="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 transition"
+            :disabled="isSubmitting">
             Hủy
           </button>
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">
-            Lưu thay đổi
+          <button type="submit"
+            class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 transition"
+            :disabled="isSubmitting">
+            <svg v-if="isSubmitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z" />
+            </svg>
+            <span v-if="isSubmitting">Đang lưu...</span>
+            <span v-else>Lưu</span>
           </button>
         </div>
       </form>
@@ -80,59 +97,102 @@
 </template>
 
 <script setup>
-import { reactive, watch } from "vue"
+import { ref, watch } from "vue"
 import { useVoucherStore } from "@/stores/voucherStore"
+import { useToast } from "vue-toastification"
 
 const props = defineProps({
   visible: Boolean,
-  voucher: Object
+  voucher: Object,
 })
-
-const emit = defineEmits(["close"])
+const emit = defineEmits(["close", "updated"])
 
 const voucherStore = useVoucherStore()
+const toast = useToast()
 
-// form data
-const form = reactive({
-  voucherId: null,
+const today = new Date().toISOString().split("T")[0]
+
+const form = ref({
+  voucherId: 0,
   code: "",
-  description: "",
-  discountPercent: 0,
   discountAmount: 0,
-  maxDiscountAmount: 0,
-  startDate: "",
-  endDate: "",
+  type: "Percent",
   quantity: 0,
-  minOrderAmount: 0,
-  isActive: true
+  minOrderPrice: 0,
+  maxDiscountPrice: 0,
+  startDate: today,
+  endDate: today,
+  isActive: true,
 })
 
-// đồng bộ props.voucher -> form khi mở popup
 watch(
   () => props.voucher,
-  (newVal) => {
-    if (newVal) {
-      Object.assign(form, {
-        voucherId: newVal.voucherId,
-        code: newVal.code,
-        description: newVal.description,
-        discountPercent: newVal.discountPercent ?? 0,
-        discountAmount: newVal.discountAmount ?? 0,
-        maxDiscountAmount: newVal.maxDiscountAmount ?? 0,
-        startDate: newVal.startDate ? newVal.startDate.split("T")[0] : "",
-        endDate: newVal.endDate ? newVal.endDate.split("T")[0] : "",
-        quantity: newVal.quantity ?? 0,
-        minOrderAmount: newVal.minOrderAmount ?? 0,
-        isActive: newVal.isActive
-      })
+  (val) => {
+    if (val) {
+      form.value = {
+        ...val,
+        startDate: val.startDate ? val.startDate.split("T")[0] : today,
+        endDate: val.endDate ? val.endDate.split("T")[0] : today,
+      }
     }
   },
   { immediate: true }
 )
 
-// cập nhật voucher
-const updateVoucher = async () => {
-  await voucherStore.updateVoucher(form.voucherId, { ...form })
-  emit("close")
+const isSubmitting = ref(false)
+
+const close = () => emit("close")
+
+const submitForm = async () => {
+  if (!form.value.startDate || !form.value.endDate) {
+    toast.error("Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc")
+    return
+  }
+
+  if (form.value.startDate < today) {
+    toast.error("Ngày bắt đầu không được trong quá khứ")
+    return
+  }
+
+  if (form.value.endDate < form.value.startDate) {
+    toast.error("Ngày kết thúc không được nhỏ hơn ngày bắt đầu")
+    return
+  }
+
+  try {
+    isSubmitting.value = true
+    await voucherStore.updateVoucher(form.value)
+    toast.success("Cập nhật voucher thành công!")
+    emit("updated")
+    close()
+  } catch (err) {
+    // Hiển thị message từ backend nếu có
+    const msg =
+      err?.response?.data?.message ||
+      err?.message ||
+      "Cập nhật voucher thất bại!"
+    toast.error(msg)
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
+
+
+<style scoped>
+@keyframes fade-in {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+</style>

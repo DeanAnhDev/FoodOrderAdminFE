@@ -1,88 +1,94 @@
 import { defineStore } from 'pinia'
-import voucherService from '@/services/voucherService'
+import {
+  getVouchers,
+  getVoucherById,
+  addVoucher,
+  updateVoucher,
+  deleteVoucher,
+} from '@/services/voucherService'
 
 export const useVoucherStore = defineStore('voucher', {
   state: () => ({
-    vouchers: {
-      items: [],
-      pageNumber: 1,
-      totalPages: 1,
-      totalCount: 0,
-      pageSize: 10,
-    },
+    vouchers: [],
+    voucher: null,
     loading: false,
     error: null,
+    pagination: {
+      page: 1,
+      pageSize: 10,
+      totalItems: 0,
+      totalPages: 0,
+    },
+    filters: {
+      code: '',
+      isActive: null,
+      startDateFrom: null,
+      startDateTo: null,
+      endDateFrom: null,
+      endDateTo: null,
+      isOutOfStock: null,
+      minOrderAmount: null,
+    },
   }),
 
   actions: {
-    // Lấy danh sách voucher (có phân trang, filter)
-    async fetchVouchers(params = {}) {
+    async fetchVouchers() {
       this.loading = true
-      this.error = null
       try {
-        const data = await voucherService.getAll(params)
-
-        this.vouchers = {
-          items: data.items || [],
-          pageNumber: data.pageNumber || 1,
-          totalPages: data.totalPages || 1,
-          totalCount: data.totalCount || 0,
-          pageSize: data.pageSize || params.pageSize || 10,
+        const params = {
+          page: this.pagination.page,
+          pageSize: this.pagination.pageSize,
+          ...this.filters,
         }
+
+        const response = await getVouchers(params)
+        this.vouchers = response.data.items || []
+        this.pagination.totalItems = response.data.totalItems
+        this.pagination.totalPages = response.data.totalPages
       } catch (err) {
-        this.error = err.response?.data || err.message
+        this.error = err.response?.data?.message || err.message
       } finally {
         this.loading = false
       }
     },
 
-    // Lấy chi tiết 1 voucher
-    async getVoucherById(id) {
+    async fetchVoucherById(id) {
+      this.loading = true
       try {
-        return await voucherService.getById(id)
+        const response = await getVoucherById(id)
+        this.voucher = response.data
       } catch (err) {
-        this.error = err.response?.data || err.message
-        return null
+        this.error = err.response?.data?.message || err.message
+      } finally {
+        this.loading = false
       }
     },
 
-    // Tạo mới voucher
     async createVoucher(data) {
-      this.loading = true
-      try {
-        await voucherService.create(data)
-        await this.fetchVouchers()
-      } catch (err) {
-        this.error = err.response?.data || err.message
-      } finally {
-        this.loading = false
-      }
+      await addVoucher(data)
+      await this.fetchVouchers()
     },
 
-    // Cập nhật voucher
     async updateVoucher(data) {
-      this.loading = true
-      try {
-        await voucherService.update(data)
-        await this.fetchVouchers()
-      } catch (err) {
-        this.error = err.response?.data || err.message
-      } finally {
-        this.loading = false
-      }
+      await updateVoucher(data)
+      await this.fetchVouchers()
     },
 
-    // Xóa voucher
-    async deleteVoucher(id) {
-      this.loading = true
-      try {
-        await voucherService.delete(id)
-        await this.fetchVouchers()
-      } catch (err) {
-        this.error = err.response?.data || err.message
-      } finally {
-        this.loading = false
-      }
+    async removeVoucher(id) {
+      await deleteVoucher(id)
+      await this.fetchVouchers()
+    },
+
+    setPage(page) {
+      this.pagination.page = page
+    },
+
+    setPageSize(size) {
+      this.pagination.pageSize = size
+    },
+
+    setFilters(filters) {
+      this.filters = { ...this.filters, ...filters }
     },
   },
 })
