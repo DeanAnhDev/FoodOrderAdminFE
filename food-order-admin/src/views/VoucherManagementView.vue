@@ -10,32 +10,78 @@
 
         <!-- Bộ lọc -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-4">
-            <input v-model="filters.code" type="text" placeholder="Mã voucher..."
-                class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200" />
+            <!-- Mã voucher -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Mã voucher</label>
+                <input v-model="filters.code" type="text" placeholder="Nhập mã voucher"
+                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-200" />
+            </div>
 
-            <select v-model="filters.isActive"
-                class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200">
-                <option value="">Tất cả trạng thái</option>
-                <option value="true">Đang hoạt động</option>
-                <option value="false">Ngừng hoạt động</option>
-            </select>
+            <!-- Trạng thái hoạt động -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Trạng thái</label>
+                <select v-model="filters.isActive"
+                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-200">
+                    <option :value="null">Tất cả trạng thái</option>
+                    <option :value="true">Đang hoạt động</option>
+                    <option :value="false">Ngừng hoạt động</option>
+                </select>
+            </div>
 
-            <input v-model="filters.startDateFrom" type="date"
-                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm" />
-            <input v-model="filters.endDateTo" type="date"
-                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm" />
+            <!-- Loại voucher -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Loại voucher</label>
+                <select v-model="filters.type"
+                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-200">
+                    <option :value="null">Tất cả loại</option>
+                    <option :value="0">Giảm theo %</option>
+                    <option :value="1">Giảm theo số tiền</option>
+                </select>
+            </div>
 
-            <select v-model="filters.isOutOfStock"
-                class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-200">
-                <option value="">Kho</option>
-                <option value="false">Còn</option>
-                <option value="true">Hết</option>
-            </select>
+            <!-- Ngày bắt đầu -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Ngày bắt đầu từ</label>
+                <input v-model="filters.startDateFrom" type="date" class="w-full px-4 py-2 border rounded-md" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Ngày bắt đầu đến</label>
+                <input v-model="filters.startDateTo" type="date" class="w-full px-4 py-2 border rounded-md" />
+            </div>
+
+            <!-- Ngày kết thúc -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Ngày kết thúc từ</label>
+                <input v-model="filters.endDateFrom" type="date" class="w-full px-4 py-2 border rounded-md" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Ngày kết thúc đến</label>
+                <input v-model="filters.endDateTo" type="date" class="w-full px-4 py-2 border rounded-md" />
+            </div>
+
+            <!-- Trạng thái kho -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Kho</label>
+                <select v-model="filters.isOutOfStock"
+                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-200">
+                    <option :value="null">Tất cả kho</option>
+                    <option :value="false">Còn hàng</option>
+                    <option :value="true">Hết hàng</option>
+                </select>
+            </div>
+
+            <!-- Đơn tối thiểu -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Đơn tối thiểu (VNĐ)</label>
+                <input v-model.number="filters.minOrderAmount" type="number" min="0" placeholder="Nhập số tiền"
+                    class="w-full px-4 py-2 border rounded-md" />
+            </div>
         </div>
 
-        <!-- Nút tìm kiếm -->
+
+        <!-- Nút tìm kiếm & reset -->
         <div class="mb-6 flex gap-2">
-            <button @click="search"
+            <button @click="applyFilter"
                 class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow text-sm font-medium">
                 Tìm kiếm
             </button>
@@ -64,17 +110,11 @@
                 <tbody class="divide-y divide-gray-100 text-sm">
                     <tr v-for="voucher in voucherStore.vouchers" :key="voucher.voucherId"
                         class="hover:bg-gray-50 transition">
-                        <td class="px-6 py-3 font-semibold text-gray-800">
-                            {{ voucher.code }}
-                        </td>
-                        <td class="px-6 py-3">{{ voucher.type }}</td>
+                        <td class="px-6 py-3 font-semibold text-gray-800">{{ voucher.code }}</td>
+                        <td class="px-6 py-3">{{ voucher.type === 0 ? "% giảm" : "VNĐ" }}</td>
                         <td class="px-6 py-3">{{ voucher.quantity }}</td>
-                        <td class="px-6 py-3">
-                            {{ formatPrice(voucher.discountAmount) }}
-                        </td>
-                        <td class="px-6 py-3">
-                            {{ formatPrice(voucher.minOrderPrice) }}
-                        </td>
+                        <td class="px-6 py-3">{{ formatPrice(voucher.discountAmount) }}</td>
+                        <td class="px-6 py-3">{{ formatPrice(voucher.minOrderPrice) }}</td>
                         <td class="px-6 py-3">{{ formatDate(voucher.startDate) }}</td>
                         <td class="px-6 py-3">{{ formatDate(voucher.endDate) }}</td>
                         <td class="px-6 py-3">
@@ -84,12 +124,12 @@
                         </td>
                         <td class="px-6 py-3 text-center">
                             <div class="flex justify-center gap-2">
-                                <button @click="openDetail(voucher)"
-                                    class="text-blue-500 hover:text-blue-700 transition" title="Xem">
+                                <button @click="openDetail(voucher)" class="text-blue-500 hover:text-blue-700"
+                                    title="Xem">
                                     <i class="fa-solid fa-eye"></i>
                                 </button>
-                                <button @click="openEdit(voucher)"
-                                    class="text-yellow-500 hover:text-yellow-600 transition" title="Sửa">
+                                <button @click="openEdit(voucher)" class="text-yellow-500 hover:text-yellow-600"
+                                    title="Sửa">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
                             </div>
@@ -102,82 +142,94 @@
         <!-- Phân trang -->
         <div class="flex justify-end items-center mt-4 gap-4">
             <button @click="prevPage" :disabled="voucherStore.pagination.page <= 1"
-                class="px-3 py-1 border rounded disabled:opacity-50">
-                Trước
-            </button>
-            <span>
-                Trang {{ voucherStore.pagination.page }} /
-                {{ voucherStore.pagination.totalPages }}
-            </span>
+                class="px-3 py-1 border rounded disabled:opacity-50">Trước</button>
+            <span>Trang {{ voucherStore.pagination.page }} / {{ voucherStore.pagination.totalPages }}</span>
             <button @click="nextPage" :disabled="voucherStore.pagination.page >= voucherStore.pagination.totalPages"
-                class="px-3 py-1 border rounded disabled:opacity-50">
-                Sau
-            </button>
+                class="px-3 py-1 border rounded disabled:opacity-50">Sau</button>
         </div>
+
+        <!-- Modals -->
+        <VoucherCreatePopup :visible="showAddModal" @close="closeAddModal" @created="reloadVouchers" />
+        <VoucherDetailPopup :visible="showDetail" :voucher="selectedVoucher" @close="showDetail = false" />
+        <VoucherEditPopup :visible="showEdit" :voucher="selectedVoucher" @close="showEdit = false"
+            @updated="reloadVouchers" />
     </div>
-
-    <!-- Modals -->
-    <VoucherCreatePopup :visible="showAddModal" @close="closeAddModal" @created="reloadVouchers" />
-    <VoucherDetailPopup :visible="showDetail" :voucher="selectedVoucher" @close="showDetail = false" />
-
-
-    <!-- Popup chỉnh sửa -->
-    <VoucherEditPopup :visible="showEdit" :voucher="selectedVoucher" @close="showEdit = false"
-        @updated="voucherStore.fetchVouchers()" />
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref } from "vue"
 import { useVoucherStore } from "@/stores/voucherStore"
+import { formatPrice, formatDate } from "@/utils/format"
 import VoucherCreatePopup from "@/components/vouchercomponent/VoucherCreatePopup.vue"
 import VoucherEditPopup from "@/components/vouchercomponent/VoucherEditPopup.vue"
 import VoucherDetailPopup from "@/components/vouchercomponent/VoucherDetailPopup.vue"
-import { formatPrice, formatDate } from "@/utils/format"
 
 const voucherStore = useVoucherStore()
 
-// State popup
+// Popup state
 const showAddModal = ref(false)
 const showDetail = ref(false)
 const showEdit = ref(false)
 const selectedVoucher = ref(null)
 
-// Bộ lọc
+// Bộ lọc đầy đủ 9 trường
 const filters = ref({
-    code: "",
-    isActive: "",
-    startDateFrom: "",
-    endDateTo: "",
-    isOutOfStock: "",
+    code: '',
+    isActive: null,
+    type: null,
+    startDateFrom: null,
+    startDateTo: null,
+    endDateFrom: null,
+    endDateTo: null,
+    isOutOfStock: null,
+    minOrderAmount: null,
 })
 
-// Reset filters
-const resetFilters = () => {
-    filters.value = {
-        code: "",
-        isActive: "",
-        startDateFrom: "",
-        endDateTo: "",
-        isOutOfStock: "",
-    }
-    reloadVouchers()
-}
+// Ngày hiện tại khóa ngày trong quá khứ
+const today = new Date()
+today.setHours(0, 0, 0, 0)
+const todayStr = today.toISOString().split('T')[0]
 
-// Search
-const search = () => {
+// Apply filter với validate ngày
+const applyFilter = () => {
+    if (filters.value.startDateFrom && filters.value.startDateTo &&
+        new Date(filters.value.startDateFrom) > new Date(filters.value.startDateTo)) {
+        alert("Ngày bắt đầu từ phải ≤ ngày bắt đầu đến")
+        return
+    }
+    if (filters.value.endDateFrom && filters.value.endDateTo &&
+        new Date(filters.value.endDateFrom) > new Date(filters.value.endDateTo)) {
+        alert("Ngày kết thúc từ phải ≤ ngày kết thúc đến")
+        return
+    }
+
     voucherStore.filters = { ...filters.value }
     reloadVouchers()
 }
 
-// Load data
+// Reset bộ lọc
+const resetFilters = () => {
+    filters.value = {
+        code: '',
+        isActive: null,
+        type: null,
+        startDateFrom: null,
+        startDateTo: null,
+        endDateFrom: null,
+        endDateTo: null,
+        isOutOfStock: null,
+        minOrderAmount: null,
+    }
+    reloadVouchers()
+}
+
+// Load vouchers
 const reloadVouchers = () => voucherStore.fetchVouchers()
-onMounted(reloadVouchers)
 
-// Popup thêm
-const openAddModal = () => (showAddModal.value = true)
-const closeAddModal = () => (showAddModal.value = false)
+// Popup handlers
+const openAddModal = () => showAddModal.value = true
+const closeAddModal = () => showAddModal.value = false
 
-// Popup sửa
 const openDetail = (voucher) => {
     selectedVoucher.value = { ...voucher }
     showDetail.value = true
@@ -192,14 +244,16 @@ const openEdit = (voucher) => {
 const prevPage = () => {
     if (voucherStore.pagination.page > 1) {
         voucherStore.setPage(voucherStore.pagination.page - 1)
-        voucherStore.fetchVouchers()
+        reloadVouchers()
     }
 }
-
 const nextPage = () => {
     if (voucherStore.pagination.page < voucherStore.pagination.totalPages) {
         voucherStore.setPage(voucherStore.pagination.page + 1)
-        voucherStore.fetchVouchers()
+        reloadVouchers()
     }
 }
+
+// On mounted
+reloadVouchers()
 </script>

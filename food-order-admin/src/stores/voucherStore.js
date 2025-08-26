@@ -22,6 +22,7 @@ export const useVoucherStore = defineStore('voucher', {
     filters: {
       code: '',
       isActive: null,
+      type: null,
       startDateFrom: null,
       startDateTo: null,
       endDateFrom: null,
@@ -34,6 +35,7 @@ export const useVoucherStore = defineStore('voucher', {
   actions: {
     async fetchVouchers() {
       this.loading = true
+      this.error = null
       try {
         const params = {
           page: this.pagination.page,
@@ -43,10 +45,10 @@ export const useVoucherStore = defineStore('voucher', {
 
         const response = await getVouchers(params)
         this.vouchers = response.data.items || []
-        this.pagination.totalItems = response.data.totalItems
-        this.pagination.totalPages = response.data.totalPages
+        this.pagination.totalItems = response.data.totalItems || 0
+        this.pagination.totalPages = response.data.totalPages || 0
       } catch (err) {
-        this.error = err.response?.data?.message || err.message
+        this.error = err.response?.data?.message || 'Lỗi khi tải danh sách voucher'
       } finally {
         this.loading = false
       }
@@ -54,29 +56,48 @@ export const useVoucherStore = defineStore('voucher', {
 
     async fetchVoucherById(id) {
       this.loading = true
+      this.error = null
       try {
         const response = await getVoucherById(id)
         this.voucher = response.data
       } catch (err) {
-        this.error = err.response?.data?.message || err.message
+        this.error = err.response?.data?.message || 'Lỗi khi tải thông tin voucher'
       } finally {
         this.loading = false
       }
     },
 
     async createVoucher(data) {
-      await addVoucher(data)
-      await this.fetchVouchers()
+      this.error = null
+      try {
+        await addVoucher(data)
+        await this.fetchVouchers()
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Lỗi khi tạo voucher'
+        throw err
+      }
     },
 
     async updateVoucher(data) {
-      await updateVoucher(data)
-      await this.fetchVouchers()
+      this.error = null
+      try {
+        await updateVoucher(data)
+        await this.fetchVouchers()
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Lỗi khi cập nhật voucher'
+        throw err
+      }
     },
 
     async removeVoucher(id) {
-      await deleteVoucher(id)
-      await this.fetchVouchers()
+      this.error = null
+      try {
+        await deleteVoucher(id)
+        await this.fetchVouchers()
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Lỗi khi xóa voucher'
+        throw err
+      }
     },
 
     setPage(page) {
@@ -85,10 +106,12 @@ export const useVoucherStore = defineStore('voucher', {
 
     setPageSize(size) {
       this.pagination.pageSize = size
+      this.pagination.page = 1 // Reset về trang 1 khi thay đổi pageSize
     },
 
     setFilters(filters) {
-      this.filters = { ...this.filters, ...filters }
+      this.filters = { ...filters }
+      this.pagination.page = 1 // Reset về trang 1 khi thay đổi bộ lọc
     },
   },
 })
