@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia'
-import { getCombos, createCombo, updateCombo, getComboById, getAllFoods } from '@/services/comboServices'
+import {
+  getCombos,
+  createCombo,
+  updateCombo,
+  getComboById,
+  getAllFoods,
+} from '@/services/comboServices'
 
 export const useComboStore = defineStore('combo', {
   state: () => ({
@@ -7,7 +13,7 @@ export const useComboStore = defineStore('combo', {
     selectedCombo: null,
     comboDetails: [],
     allFoods: [],
-    availableFoods: [], 
+    availableFoods: [],
     loading: false,
     error: null,
     pagination: {
@@ -64,35 +70,21 @@ export const useComboStore = defineStore('combo', {
       try {
         await this.fetchComboById(comboId)
         await this.fetchAllFoods()
-        const comboFoodIds = this.comboDetails.map(d => d.foodId)
-        this.availableFoods = this.allFoods.filter(f => !comboFoodIds.includes(f.foodId))
+        const comboFoodIds = this.comboDetails.map((d) => d.foodId)
+        this.availableFoods = this.allFoods.filter((f) => !comboFoodIds.includes(f.foodId))
       } catch (err) {
         this.error = err
       }
     },
 
     async createCombo(data) {
-      this.loading = true
-      try {
-        await createCombo(data)
-        await this.fetchCombos()
-      } catch (err) {
-        this.error = err
-      } finally {
-        this.loading = false
-      }
+      await createCombo(data)
+      await this.fetchCombos()
     },
 
     async updateCombo(data) {
-      this.loading = true
-      try {
-        await updateCombo(data)
-        await this.fetchCombos()
-      } catch (err) {
-        this.error = err
-      } finally {
-        this.loading = false
-      }
+      await updateCombo(data)
+      await this.fetchCombos()
     },
   },
 })

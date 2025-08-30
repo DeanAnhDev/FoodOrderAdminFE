@@ -16,8 +16,8 @@
         <div>
           <label class="block text-sm font-medium">Loại giảm giá</label>
           <select v-model="form.type" class="w-full border p-2 rounded focus:ring focus:ring-blue-200 outline-none">
-            <option :value="0">Giảm theo %</option>
-            <option :value="1">Giảm theo số tiền</option>
+            <option value="Percentage">Giảm theo %</option>
+            <option value="Amount">Giảm theo số tiền</option>
           </select>
         </div>
 
@@ -139,8 +139,8 @@ const handleSubmit = async () => {
     toast.success("Tạo voucher thành công!")
     close()
   } catch (err) {
-    const msg = err?.response?.data?.message || err?.message || "Tạo voucher thất bại!"
-    toast.error(msg)
+    const backendMessage = err.response?.data?.message || 'Tạo voucher thất bại!'
+    toast.error(backendMessage)
   } finally {
     isSubmitting.value = false
   }

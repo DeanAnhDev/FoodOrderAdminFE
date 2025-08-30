@@ -215,8 +215,9 @@ const handleSubmit = async () => {
     emit('updated')
     emit('close')
   } catch (err) {
-    console.error('Lỗi cập nhật món ăn:', err)
-    toast.error('Cập nhật món ăn thất bại')
+    // Nếu backend trả về message thì show message đó
+    const backendMessage = err.response?.data?.error || 'Cập nhật thất bại!'
+    toast.error(backendMessage)
   } finally {
     loading.value = false
   }

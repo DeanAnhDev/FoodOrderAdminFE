@@ -28,7 +28,7 @@
           <label class="block text-sm font-medium mb-1">Loại</label>
           <select v-model="form.type"
             class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none">
-            <option value="Percent">Giảm theo %</option>
+            <option value="Percentage">Giảm theo %</option>
             <option value="Amount">Giảm theo số tiền</option>
           </select>
         </div>
@@ -166,12 +166,8 @@ const submitForm = async () => {
     emit("updated")
     close()
   } catch (err) {
-    // Hiển thị message từ backend nếu có
-    const msg =
-      err?.response?.data?.message ||
-      err?.message ||
-      "Cập nhật voucher thất bại!"
-    toast.error(msg)
+    const backendMessage = err.response?.data?.message || 'Cập nhật thất bại!'
+    toast.error(backendMessage)
   } finally {
     isSubmitting.value = false
   }

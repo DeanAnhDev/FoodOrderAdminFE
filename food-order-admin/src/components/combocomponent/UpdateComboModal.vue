@@ -263,10 +263,12 @@ const submit = async () => {
     emit('updated');
     emit('close');
   } catch (err) {
-    toast.error('Có lỗi xảy ra khi cập nhật');
+    console.error("Backend error:", err)
+    const backendMessage = err.response?.data?.error || 'Cập nhật thất bại!'
+    toast.error(backendMessage)
   }
-};
 
+};
 
 
 watch(() => props.comboId, async (id) => {
