@@ -100,6 +100,7 @@
                         <th class="px-6 py-3">Loại</th>
                         <th class="px-6 py-3">Số lượng</th>
                         <th class="px-6 py-3">Giảm</th>
+                        <th class="px-6 py-3">Giảm tối đa</th>
                         <th class="px-6 py-3">Đơn tối thiểu</th>
                         <th class="px-6 py-3">Ngày bắt đầu</th>
                         <th class="px-6 py-3">Ngày hết hạn</th>
@@ -111,9 +112,18 @@
                     <tr v-for="voucher in voucherStore.vouchers" :key="voucher.voucherId"
                         class="hover:bg-gray-50 transition">
                         <td class="px-6 py-3 font-semibold text-gray-800">{{ voucher.code }}</td>
-                        <td class="px-6 py-3">{{ voucher.type === 0 ? "% giảm" : "VNĐ" }}</td>
+                        <td class="px-6 py-3">
+                            {{ voucher.type === 'Amount' ? "VNĐ" : voucher.type === 'Percentage' ? "% giảm" : "N/A" }}
+                        </td>
                         <td class="px-6 py-3">{{ voucher.quantity }}</td>
-                        <td class="px-6 py-3">{{ formatPrice(voucher.discountAmount) }}</td>
+                        <td class="px-6 py-3">
+                            {{ voucher.type === 'Amount'
+                                ? formatPrice(voucher.discountAmount)
+                                : voucher.type === 'Percentage'
+                                    ? voucher.discountAmount + "%"
+                                    : "N/A" }}
+                        </td>
+                        <td class="px-6 py-3">{{ formatPrice(voucher.maxDiscountPrice) }}</td>
                         <td class="px-6 py-3">{{ formatPrice(voucher.minOrderPrice) }}</td>
                         <td class="px-6 py-3">{{ formatDate(voucher.startDate) }}</td>
                         <td class="px-6 py-3">{{ formatDate(voucher.endDate) }}</td>

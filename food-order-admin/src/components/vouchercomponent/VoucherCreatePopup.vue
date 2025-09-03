@@ -139,7 +139,7 @@ const handleSubmit = async () => {
     toast.success("Tạo voucher thành công!")
     close()
   } catch (err) {
-    const backendMessage = err.response?.data?.message || 'Tạo voucher thất bại!'
+    const backendMessage = err.response?.data?.error || 'Tạo voucher thất bại!'
     toast.error(backendMessage)
   } finally {
     isSubmitting.value = false

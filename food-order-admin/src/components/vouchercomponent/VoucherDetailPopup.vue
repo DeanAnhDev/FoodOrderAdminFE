@@ -17,17 +17,24 @@
                 </div>
 
                 <div class="flex justify-between">
-                    <span class="font-medium">Giá trị giảm:</span>
-                    <span>{{ formatPrice(voucher.discountAmount) }}</span>
-                </div>
-
-                <div class="flex justify-between">
                     <span class="font-medium">Loại:</span>
                     <span>
-                        <span v-if="voucher.type === 'Percent'">Giảm theo %</span>
-                        <span v-else>Giảm theo số tiền</span>
+                        <span v-if="voucher?.type === 'Percentage'">Giảm theo %</span>
+                        <span v-else-if="voucher?.type === 'Amount'">Giảm theo số tiền</span>
+                        <span v-else>N/A</span>
                     </span>
+
                 </div>
+                <div class="flex justify-between">
+                    <span class="font-medium">Giá trị giảm:</span>
+                    <span> {{ voucher.type === 'Amount'
+                        ? formatPrice(voucher.discountAmount)
+                        : voucher.type === 'Percentage'
+                            ? voucher.discountAmount + "%"
+                            : "N/A" }}</span>
+                </div>
+
+
 
                 <div class="flex justify-between">
                     <span class="font-medium">Số lượng:</span>

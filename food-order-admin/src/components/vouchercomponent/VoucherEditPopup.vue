@@ -59,7 +59,7 @@
           <div>
             <label class="block text-sm font-medium mb-1">Ngày bắt đầu</label>
             <input type="date" v-model="form.startDate" :min="today"
-              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none" required />
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none" disabled />
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Ngày kết thúc</label>
@@ -146,11 +146,6 @@ const close = () => emit("close")
 const submitForm = async () => {
   if (!form.value.startDate || !form.value.endDate) {
     toast.error("Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc")
-    return
-  }
-
-  if (form.value.startDate < today) {
-    toast.error("Ngày bắt đầu không được trong quá khứ")
     return
   }
 
