@@ -24,10 +24,9 @@
         <!-- Discount Amount -->
         <div>
           <label class="block text-sm font-medium">
-            {{ form.type === 0 ? "% Giảm" : "Giảm cố định (VNĐ)" }}
+            Giá trị giảm
           </label>
-          <input v-model.number="form.discountAmount" type="number" :min="form.type === 0 ? 1 : 1000"
-            :max="form.type === 0 ? 100 : null"
+          <input v-model.number="form.discountAmount" type="number" min="0"
             class="w-full border p-2 rounded focus:ring focus:ring-blue-200 outline-none" required />
         </div>
 
