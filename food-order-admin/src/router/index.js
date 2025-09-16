@@ -5,6 +5,8 @@ import ComboManagementView from '@/views/ComboManagementView.vue'
 import FoodManagementView from '@/views/FoodManagementView.vue'
 import Layout from '@/layouts/admin/Layout.vue'
 import DashboardView from '@/views/DashBoardView.vue'
+import VoucherManagementView from '@/views/VoucherManagementView.vue'
+import PromotionManagementView from '@/views/PromotionManagementView.vue'
 
 const routes = [
   {
@@ -16,6 +18,8 @@ const routes = [
       { path: 'food', name: 'food', component: FoodManagementView },
       { path: 'category', name: 'category', component: CategoryManagementView },
       { path: 'account', name: 'account', component: AccountManagementView },
+      { path: 'voucher', name: 'voucher', component: VoucherManagementView },
+      { path: 'promotion', name: 'promotion', component: PromotionManagementView },
     ],
   },
 

@@ -227,7 +227,9 @@ const submit = async () => {
     emit('close')
     resetForm()
   } catch (err) {
-    toast.error('Lỗi khi tạo combo!')
+    // Nếu backend trả về message thì show message đó
+    const backendMessage = err.response?.data?.error || 'Cập nhật thất bại!'
+    toast.error(backendMessage)
   }
 }
 
