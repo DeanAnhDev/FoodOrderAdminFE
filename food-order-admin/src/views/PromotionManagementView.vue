@@ -9,14 +9,7 @@
         </div>
 
         <!-- Bộ lọc -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-4">
-            <!-- Mã khuyến mãi -->
-            <div>
-                <label class="block text-sm font-medium mb-1">Mã khuyến mãi</label>
-                <input v-model="filters.code" type="text" placeholder="Nhập mã khuyến mãi"
-                    class="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-200" />
-            </div>
-
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <!-- Trạng thái hoạt động -->
             <div>
                 <label class="block text-sm font-medium mb-1">Trạng thái</label>
@@ -28,31 +21,16 @@
                 </select>
             </div>
 
-            <!-- Ngày bắt đầu -->
+            <!-- Ngày bắt đầu từ -->
             <div>
                 <label class="block text-sm font-medium mb-1">Ngày bắt đầu từ</label>
                 <input v-model="filters.startDateFrom" type="date" class="w-full px-4 py-2 border rounded-md" />
             </div>
+
+            <!-- Ngày bắt đầu đến -->
             <div>
                 <label class="block text-sm font-medium mb-1">Ngày bắt đầu đến</label>
                 <input v-model="filters.startDateTo" type="date" class="w-full px-4 py-2 border rounded-md" />
-            </div>
-
-            <!-- Ngày kết thúc -->
-            <div>
-                <label class="block text-sm font-medium mb-1">Ngày kết thúc từ</label>
-                <input v-model="filters.endDateFrom" type="date" class="w-full px-4 py-2 border rounded-md" />
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Ngày kết thúc đến</label>
-                <input v-model="filters.endDateTo" type="date" class="w-full px-4 py-2 border rounded-md" />
-            </div>
-
-            <!-- Đơn tối thiểu -->
-            <div>
-                <label class="block text-sm font-medium mb-1">Đơn tối thiểu (VNĐ)</label>
-                <input v-model.number="filters.minOrderAmount" type="number" min="0" placeholder="Nhập số tiền"
-                    class="w-full px-4 py-2 border rounded-md" />
             </div>
         </div>
 
@@ -67,6 +45,7 @@
                 Reset
             </button>
         </div>
+
 
         <!-- Bảng danh sách -->
         <div class="overflow-x-auto rounded-lg shadow">
@@ -90,8 +69,23 @@
                         class="hover:bg-gray-50 transition">
                         <td class="px-6 py-3 font-semibold text-gray-800">{{ promotion.promotionId }}</td>
                         <td class="px-6 py-3">{{ promotion.promotionName }}</td>
-                        <td class="px-6 py-3">{{ formatPrice(promotion.discountAmount) }}</td>
-                        <td class="px-6 py-3">{{ promotion.type }}</td>
+                        <td class="px-6 py-3">
+                            <span v-if="promotion.type === 'Amount'">
+                                {{ formatPrice(promotion.discountAmount) }}
+                            </span>
+                            <span v-else-if="promotion.type === 'Percentage'">
+                                {{ promotion.discountAmount }}%
+                            </span>
+                            <span v-else>
+                                N/A
+                            </span>
+                        </td>
+                        <td class="px-6 py-3">
+                            <span v-if="promotion.type === 'Amount'">VND</span>
+                            <span v-else-if="promotion.type === 'Percentage'">%</span>
+                            <span v-else>N/A</span>
+                        </td>
+
                         <td class="px-6 py-3">
                             <span :class="promotion.isActive ? 'text-green-600 font-medium' : 'text-gray-500'">
                                 {{ promotion.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động' }}
@@ -104,9 +98,11 @@
                         <td class="px-6 py-3 text-center">
                             <div class="flex justify-center gap-2">
                                 <button @click="openDetail(promotion)"
-                                    class="px-2 py-1 text-blue-600 hover:underline">Xem</button>
+                                    class="px-2 py-1 text-blue-600 hover:underline cursor-pointer">
+                                    <i class="fa-solid fa-eye"></i></button>
                                 <button @click="openEdit(promotion)"
-                                    class="px-2 py-1 text-yellow-600 hover:underline">Sửa</button>
+                                    class="px-2 py-1 text-yellow-600 hover:underline cursor-pointer">
+                                    <i class="fa-solid fa-pen-to-square"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -147,36 +143,25 @@ const showDetail = ref(false)
 const showEdit = ref(false)
 const selectedPromotion = ref(null)
 
-// Bộ lọc
+// Bộ lọc (đúng theo PromotionQuery backend)
 const filters = ref({
-    code: '',
     isActive: null,
     startDateFrom: null,
-    startDateTo: null,
-    endDateFrom: null,
-    endDateTo: null,
-    minOrderAmount: null,
+    startDateTo: null
 })
 
 // Ánh xạ filters sang store
 const applyFilter = () => {
-    // Validate ngày
     if (filters.value.startDateFrom && filters.value.startDateTo &&
         new Date(filters.value.startDateFrom) > new Date(filters.value.startDateTo)) {
         alert("Ngày bắt đầu từ phải ≤ ngày bắt đầu đến")
         return
     }
-    if (filters.value.endDateFrom && filters.value.endDateTo &&
-        new Date(filters.value.endDateFrom) > new Date(filters.value.endDateTo)) {
-        alert("Ngày kết thúc từ phải ≤ ngày kết thúc đến")
-        return
-    }
 
-    // Chuyển đổi sang các trường store đang dùng
     promotionStore.setFilters({
-        name: filters.value.code,
-        status: filters.value.isActive,
-        // Có thể bổ sung các trường khác nếu service hỗ trợ
+        isActive: filters.value.isActive,
+        startDateFrom: filters.value.startDateFrom,
+        startDateTo: filters.value.startDateTo
     })
     promotionStore.setPage(1)
     reloadPromotions()
@@ -185,18 +170,17 @@ const applyFilter = () => {
 // Reset bộ lọc
 const resetFilters = () => {
     filters.value = {
-        code: '',
         isActive: null,
         startDateFrom: null,
-        startDateTo: null,
-        endDateFrom: null,
-        endDateTo: null,
-        minOrderAmount: null,
+        startDateTo: null
     }
+
     promotionStore.setFilters({
-        name: '',
-        status: null,
+        isActive: null,
+        startDateFrom: null,
+        startDateTo: null
     })
+
     promotionStore.setPage(1)
     reloadPromotions()
 }
