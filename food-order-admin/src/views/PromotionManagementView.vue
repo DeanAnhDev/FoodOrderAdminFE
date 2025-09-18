@@ -122,8 +122,9 @@
         <!-- Modals -->
         <PromotionCreatePopup :visible="showAddModal" @close="closeAddModal" @created="reloadPromotions" />
         <PromotionDetailPopup :visible="showDetail" :promotion="selectedPromotion" @close="showDetail = false" />
-        <PromotionEditPopup :visible="showEdit" :promotion="selectedPromotion" @close="showEdit = false"
-            @updated="reloadPromotions" />
+        <PromotionEditPopup :visible="isEditOpen" :promotion="selectedPromotion" @close="isEditOpen = false"
+            @updated="reloadPromotions()" />
+
     </div>
 </template>
 
@@ -140,7 +141,7 @@ const promotionStore = usePromotionStore()
 // Popup state
 const showAddModal = ref(false)
 const showDetail = ref(false)
-const showEdit = ref(false)
+const isEditOpen = ref(false)
 const selectedPromotion = ref(null)
 
 // Bộ lọc (đúng theo PromotionQuery backend)
@@ -198,8 +199,8 @@ const openDetail = (promotion) => {
 }
 
 const openEdit = (promotion) => {
-    selectedPromotion.value = { ...promotion }
-    showEdit.value = true
+    selectedPromotion.value = promotion
+    isEditOpen.value = true
 }
 
 // Pagination

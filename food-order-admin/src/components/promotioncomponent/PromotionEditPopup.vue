@@ -15,7 +15,7 @@ const emit = defineEmits(['close', 'updated'])
 const promotionStore = usePromotionStore()
 const foodStore = useFoodStore()
 const comboStore = useComboStore()
-
+const today = new Date().toISOString().split('T')[0] // yyyy-MM-dd
 const form = ref({
     id: null,
     promotionName: '',
@@ -28,6 +28,7 @@ const form = ref({
     comboIds: []
 })
 
+
 const foods = ref([])
 const combos = ref([])
 
@@ -38,24 +39,37 @@ onMounted(async () => {
     combos.value = comboStore.combos
 })
 
-// Khi props.promotion thay đổi → update form
 watch(() => props.promotion, (val) => {
+    console.log(val);
     if (val) {
-        form.value = { ...val }
+        form.value = {
+
+            ...form.value, // giữ default
+            id: val.promotionId ?? null,
+            promotionName: val.promotionName ?? '',
+            discountAmount: val.discountAmount ?? 0,
+            type: val.type ?? 'Amount',
+            startDate: val.startDate ? val.startDate.split('T')[0] : '',
+            endDate: val.endDate ? val.endDate.split('T')[0] : '',
+            isActive: val.isActive ?? true,
+            foodIds: val.foodIds || [],
+            comboIds: val.comboIds || []
+        }
     }
 }, { immediate: true })
 
 const handleSubmit = async () => {
     try {
         const payload = { ...form.value }
-        await promotionStore.updatePromotion(payload)
-        toast.success("Cập nhật khuyến mãi thành công ✅")
+        await promotionStore.updatePromotion(payload.id, payload)
+        toast.success("Cập nhật khuyến mãi thành công ")
         emit('updated')
         close()
     } catch (error) {
-        toast.error(error.response?.data?.message || "Cập nhật khuyến mãi thất bại ❌")
+        toast.error(error.response?.data?.message || "Cập nhật khuyến mãi thất bại ")
     }
 }
+
 
 const close = () => {
     emit('close')
@@ -101,11 +115,12 @@ const close = () => {
                     <div>
                         <label class="block text-sm font-medium mb-1">Ngày bắt đầu</label>
                         <input v-model="form.startDate" type="date" class="w-full border rounded-lg px-3 py-2"
-                            required />
+                            disabled />
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Ngày kết thúc</label>
-                        <input v-model="form.endDate" type="date" class="w-full border rounded-lg px-3 py-2" required />
+                        <input v-model="form.endDate" type="date" :min="today"
+                            class="w-full border rounded-lg px-3 py-2" required />
                     </div>
                 </div>
 

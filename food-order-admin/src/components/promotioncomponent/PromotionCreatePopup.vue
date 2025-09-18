@@ -10,7 +10,7 @@ const props = defineProps({
     visible: Boolean
 })
 const emit = defineEmits(['close', 'created'])
-
+const today = new Date().toISOString().split('T')[0] // yyyy-MM-dd
 const promotionStore = usePromotionStore()
 const foodStore = useFoodStore()
 const comboStore = useComboStore()
@@ -92,12 +92,13 @@ const close = () => {
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1">Ngày bắt đầu</label>
-                        <input v-model="form.startDate" type="date" class="w-full border rounded-lg px-3 py-2"
-                            required />
+                        <input v-model="form.startDate" type="date" :min="today"
+                            class="w-full border rounded-lg px-3 py-2" required />
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Ngày kết thúc</label>
-                        <input v-model="form.endDate" type="date" class="w-full border rounded-lg px-3 py-2" required />
+                        <input v-model="form.endDate" type="date" :min="today"
+                            class="w-full border rounded-lg px-3 py-2" required />
                     </div>
                 </div>
 
