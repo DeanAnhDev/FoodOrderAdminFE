@@ -161,10 +161,12 @@ const toggleComboStatus = async (combo) => {
     await comboStore.updateComboStatusAction(combo.comboId, newStatus)
     toast.success(`Đã ${newStatus ? 'mở bán' : 'ngừng bán'} combo ${combo.comboName}`)
   } catch (err) {
-    toast.error('Cập nhật trạng thái combo thất bại!')
+    const backendMsg = err.response?.data?.message || 'Cập nhật trạng thái combo thất bại!'
+    toast.error(backendMsg)
     console.error(err)
   }
 }
+
 
 const showViewModal = ref(false)
 
