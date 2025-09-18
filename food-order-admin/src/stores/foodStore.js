@@ -1,6 +1,6 @@
 // src/stores/foodStore.js
 import { defineStore } from 'pinia'
-import { getFoods, addFood, updateFood, deleteFood } from '@/services/foodService'
+import { getFoods, addFood, updateFood, deleteFood, updateFoodStatus } from '@/services/foodService'
 
 export const useFoodStore = defineStore('food', {
   state: () => ({
@@ -11,15 +11,15 @@ export const useFoodStore = defineStore('food', {
       page: 1,
       pageSize: 10,
       totalItems: 0,
-      totalPages: 0
+      totalPages: 0,
     },
     filters: {
       name: '',
       categoryName: '',
       status: null,
       isOutOfStock: null,
-      sortOrder: 'desc'
-    }
+      sortOrder: 'desc',
+    },
   }),
 
   actions: {
@@ -33,7 +33,7 @@ export const useFoodStore = defineStore('food', {
           name: this.filters.name || undefined,
           categoryName: this.filters.categoryName || undefined,
           status: this.filters.status !== null ? this.filters.status : undefined,
-          isOutOfStock: this.filters.isOutOfStock !== null ? this.filters.isOutOfStock : undefined
+          isOutOfStock: this.filters.isOutOfStock !== null ? this.filters.isOutOfStock : undefined,
         }
 
         const response = await getFoods(params)
@@ -62,6 +62,11 @@ export const useFoodStore = defineStore('food', {
       await this.fetchFoods()
     },
 
+    async updateFoodStatusAction(id, isActive) {
+      await updateFoodStatus(id, isActive) // gọi API
+      const food = this.foods.find((f) => f.foodId === id)
+      if (food) food.status = isActive // cập nhật UI
+    },
     setPage(page) {
       this.pagination.page = page
     },
@@ -72,6 +77,6 @@ export const useFoodStore = defineStore('food', {
 
     setFilters(filters) {
       this.filters = { ...this.filters, ...filters }
-    }
-  }
+    },
+  },
 })

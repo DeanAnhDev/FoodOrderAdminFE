@@ -57,6 +57,7 @@
             <th class="px-6 py-3">Danh mục</th>
             <th class="px-6 py-3">Slug</th>
             <th class="px-6 py-3">Giá</th>
+            <th class="px-6 py-3">Khuyến mãi</th>
             <th class="px-6 py-3">Trạng thái</th>
             <th class="px-6 py-3">Kho</th>
             <th class="px-6 py-3">Đã bán</th>
@@ -73,13 +74,26 @@
             <td class="px-6 py-3 text-gray-700">{{ getCategoryNameById(combo.foodCategoryId) }}</td>
             <td class="px-6 py-3 italic text-gray-500">{{ combo.slug }}</td>
             <td class="px-6 py-3 text-gray-800 font-medium">{{ formatPrice(combo.price) }}</td>
+            <!-- Khuyến mãi -->
+            <td class="p-3">
+              <div v-if="combo.promotion" class="text-sm">
+                <span class="font-semibold text-blue-600">
+                  {{ combo.promotion.promotionName }}
+                </span>
+                <span class="ml-1 text-gray-600">
+                  ({{ combo.promotion.discountAmount
+                  }}{{ combo.promotion.type === "Percentage" ? "%" : "₫" }})
+                </span>
+              </div>
+              <span v-else class="text-gray-400 italic">Không áp dụng</span>
+            </td>
             <td class="px-6 py-3">
               <span :class="combo.status ? 'text-green-600 font-medium' : 'text-gray-500'">
-                {{ combo.status ? 'Hiển thị' : 'Ẩn' }}
+                {{ combo.status ? 'Mở bán' : 'Ngưng bán' }}
               </span>
             </td>
             <td class="px-6 py-3">
-                {{ combo.quantity}}
+              {{ combo.quantity }}
             </td>
             <td class="px-6 py-3">{{ combo.sold || 0 }}</td>
             <td class="px-6 py-3">{{ formatDate(combo.createdAt) }}</td>
@@ -92,6 +106,11 @@
                 <button @click="openUpdateModal(combo.comboId)" class="text-yellow-500 hover:text-yellow-600 text-lg"
                   title="Sửa">
                   <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button @click="toggleComboStatus(combo)"
+                  :class="combo.status ? 'text-green-500 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'"
+                  title="Bật/Tắt bán">
+                  <i :class="combo.status ? 'fa-solid fa-toggle-on' : 'fa-solid fa-toggle-off'"></i>
                 </button>
               </div>
             </td>
@@ -132,6 +151,20 @@ import UpdateComboModal from '@/components/combocomponent/UpdateComboModal.vue'
 import { formatPrice, formatDate } from '@/utils/format'
 import ViewComboModal from '@/components/combocomponent/ViewComboModal.vue'
 
+import { useToast } from 'vue-toastification'
+
+const toast = useToast()
+
+const toggleComboStatus = async (combo) => {
+  try {
+    const newStatus = !combo.status
+    await comboStore.updateComboStatusAction(combo.comboId, newStatus)
+    toast.success(`Đã ${newStatus ? 'mở bán' : 'ngừng bán'} combo ${combo.comboName}`)
+  } catch (err) {
+    toast.error('Cập nhật trạng thái combo thất bại!')
+    console.error(err)
+  }
+}
 
 const showViewModal = ref(false)
 

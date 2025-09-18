@@ -5,6 +5,7 @@ import {
   updateCombo,
   getComboById,
   getAllFoods,
+  updateComboStatus,
 } from '@/services/comboServices'
 
 export const useComboStore = defineStore('combo', {
@@ -85,6 +86,13 @@ export const useComboStore = defineStore('combo', {
     async updateCombo(data) {
       await updateCombo(data)
       await this.fetchCombos()
+    },
+    async updateComboStatusAction(id, isActive) {
+      await updateComboStatus(id, isActive)
+      const combo = this.combos.find((c) => c.comboId === id)
+      if (combo) {
+        combo.status = isActive
+      }
     },
   },
 })

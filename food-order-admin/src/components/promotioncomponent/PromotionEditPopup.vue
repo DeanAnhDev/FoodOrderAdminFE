@@ -8,7 +8,7 @@ import { useToast } from "vue-toastification"
 const toast = useToast()
 const props = defineProps({
     visible: Boolean,
-    promotion: Object // dữ liệu khuyến mãi cần edit
+    promotion: Object 
 })
 const emit = defineEmits(['close', 'updated'])
 
