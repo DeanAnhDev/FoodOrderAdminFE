@@ -11,25 +11,58 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Cột trái: Nhập thông tin -->
         <div class="space-y-4">
-          <input v-model="form.comboName" type="text" placeholder="Tên combo"
-            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-400" />
+          <!-- Tên combo -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tên combo</label>
+            <input v-model="form.comboName" type="text" placeholder="Nhập tên combo"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-400" />
+          </div>
 
-          <select v-model="form.foodCategoryId"
-            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-400">
-            <option value="">Chọn danh mục</option>
-            <option v-for="cat in categoryStore.categories" :key="cat.foodCategoryId" :value="cat.foodCategoryId">
-              {{ cat.categoryName }}
-            </option>
-          </select>
+          <!-- Danh mục -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
+            <select v-model="form.foodCategoryId"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-400">
+              <option value="">Chọn danh mục</option>
+              <option v-for="cat in categoryStore.categories" :key="cat.foodCategoryId" :value="cat.foodCategoryId">
+                {{ cat.categoryName }}
+              </option>
+            </select>
+          </div>
 
-          <textarea v-model="form.description" placeholder="Mô tả combo" rows="4"
-            class="w-full px-4 py-2 border rounded-lg resize-none focus:outline-none focus:ring focus:border-blue-400"></textarea>
+          <!-- Khuyến mãi -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Khuyến mãi</label>
+            <select v-model="form.promotionId"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition text-gray-700">
+              <option value="null">🎁 Chọn khuyến mãi (tuỳ chọn)</option>
+              <option v-for="promo in promotionStore.promotions.filter(p => p.isActive)" :key="promo.promotionId"
+                :value="promo.promotionId">
+                {{ promo.promotionName }} - Giảm {{ promo.discountAmount }}{{ promo.type === 'Percentage' ? '%' : '₫' }}
+              </option>
+            </select>
+          </div>
 
-          <input v-model.number="form.price" type="number" placeholder="Giá combo"
-            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-400" />
-          <input v-model.number="form.quantity" type="number" placeholder="Số lượng combo" min="1"
-            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-400" />
+          <!-- Mô tả -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả combo</label>
+            <textarea v-model="form.description" placeholder="Nhập mô tả..." rows="4"
+              class="w-full px-4 py-2 border rounded-lg resize-none focus:outline-none focus:ring focus:border-blue-400"></textarea>
+          </div>
 
+          <!-- Giá combo -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Giá combo</label>
+            <input v-model.number="form.price" type="number" placeholder="Nhập giá combo"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-400" />
+          </div>
+
+          <!-- Số lượng -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng combo</label>
+            <input v-model.number="form.quantity" type="number" placeholder="Nhập số lượng" min="1"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-400" />
+          </div>
 
           <!-- Ảnh combo -->
           <div>
@@ -50,6 +83,7 @@
             </div>
           </div>
         </div>
+
 
         <!-- Cột phải: Danh sách món ăn -->
         <div>
@@ -133,7 +167,9 @@ import { useFoodStore } from '@/stores/foodStore'
 import { useComboStore } from '@/stores/comboStore'
 import { formatPrice } from '@/utils/format'
 import { useToast } from 'vue-toastification'
+import { usePromotionStore } from '@/stores/promotionStore'
 
+const promotionStore = usePromotionStore()
 const toast = useToast()
 const props = defineProps({ isOpen: Boolean })
 const emit = defineEmits(['close', 'created'])
@@ -152,7 +188,8 @@ const form = ref({
   description: '',
   images: null,
   quantity: 1,
-  foods: []
+  foods: [],
+  promotionId: ''
 })
 
 const resetForm = () => {
@@ -218,7 +255,13 @@ const submit = async () => {
   if (form.value.foods.length === 0) return toast.error('Combo phải có ít nhất 1 món ăn.')
   if (form.value.foods.some(f => !f.quantity || f.quantity < 1)) return toast.error('Số lượng món ăn phải ≥ 1.')
   if (!form.value.quantity || form.value.quantity < 1) return toast.error('Số lượng combo phải ≥ 1.')
+  if (form.value.price === null || form.value.price === '' || isNaN(form.value.price)) {
+    return toast.error('Vui lòng nhập giá combo.');
+  }
 
+  if (form.value.price <= 0) {
+    return toast.error('Giá combo không được nhỏ hơn 0.');
+  }
 
   try {
     await comboStore.createCombo(form.value)
@@ -236,5 +279,6 @@ const submit = async () => {
 onMounted(() => {
   categoryStore.fetchCategories()
   foodStore.fetchFoods()
+  promotionStore.fetchPromotions()
 })
 </script>

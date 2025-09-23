@@ -1,34 +1,22 @@
 <template>
   <div class="layout-container">
-    <Navbar
-      @toggle-sidebar="toggleSidebar"
-      @toggle-pin-sidebar="togglePinSidebar"
-      :showPinSidebar="!isMobile"
-      :sidebarPinned="sidebarPinned"
-      :class="[
+    <Navbar @toggle-sidebar="toggleSidebar" @toggle-pin-sidebar="togglePinSidebar" :showPinSidebar="!isMobile"
+      :sidebarPinned="sidebarPinned" :class="[
         { 'ml-[230px]': !isMobile && sidebarPinned },
         'transition-all duration-300 ease-in-out',
-      ]"
-    />
+      ]" />
     <div class="main-content">
       <!-- Overlay chỉ hiện trên mobile khi sidebar mở -->
-      <div
-        v-if="sidebarOpen && isMobile"
+      <div v-if="sidebarOpen && isMobile"
         class="fixed inset-0 z-40 bg-gray bg-opacity-40 backdrop-blur-sm transition-opacity"
-        @click="sidebarOpen = false"
-      ></div>
+        @click="sidebarOpen = false"></div>
       <!-- Sidebar luôn hiện trên desktop, toggle trên mobile hoặc desktop nếu sidebarPinned -->
-      <Sidebar
-        :isOpen="isMobile ? sidebarOpen : sidebarPinned"
-        :navbarHeight="navbarHeight"
-        :isMobile="isMobile"
-        @close="sidebarOpen = false"
-      />
+      <Sidebar :isOpen="isMobile ? sidebarOpen : sidebarPinned" :navbarHeight="navbarHeight" :isMobile="isMobile"
+        @close="sidebarOpen = false" />
       <!-- Main content -->
-      <div
-        class="page-content transition-all duration-300 ease-in-out"
-        :class="{ 'ml-[230px]': !isMobile && sidebarPinned }"
-      >
+      <!-- Main content -->
+      <div class="page-content transition-all duration-300 ease-in-out"
+        :class="{ 'ml-[230px]': !isMobile && sidebarPinned }">
         <Main />
       </div>
     </div>
@@ -40,6 +28,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import Navbar from './Navbar.vue'
 import Sidebar from './Sidebar.vue'
 import Main from './Main.vue'
+import AuthDebugPanel from '@/components/AuthDebugPanel.vue'
 
 const sidebarOpen = ref(true)
 const sidebarPinned = ref(true)

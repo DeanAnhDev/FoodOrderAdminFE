@@ -15,3 +15,9 @@ export const updateFood = async (food) => {
 export const deleteFood = async (id) => {
   return axiosClient.put(`/Food`, id)
 }
+
+export const updateFoodStatus = async (id, isActive) => {
+  return axiosClient.patch(`/Food/${id}/status`, isActive, {
+    headers: { 'Content-Type': 'application/json' },
+  })
+}

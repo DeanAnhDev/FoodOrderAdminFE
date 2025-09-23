@@ -62,6 +62,7 @@
                         <th class="px-6 py-3">Slug</th>
                         <th class="px-6 py-3">Danh mục</th>
                         <th class="px-6 py-3">Giá</th>
+                        <th class="px-6 py-3">Khuyến mãi</th>
                         <th class="px-6 py-3">Trạng thái</th>
                         <th class="px-6 py-3">Kho</th>
                         <th class="px-6 py-3">Đã bán</th>
@@ -83,6 +84,19 @@
                             }}
                         </td>
                         <td class="px-6 py-3 text-gray-800">{{ formatPrice(food.price) }}</td>
+                        <!-- Khuyến mãi -->
+                        <td class="p-3">
+                            <div v-if="food.promotion" class="text-sm">
+                                <span class="font-semibold text-blue-600">
+                                    {{ food.promotion.promotionName }}
+                                </span>
+                                <span class="ml-1 text-gray-600">
+                                    ({{ food.promotion.discountAmount
+                                    }}{{ food.promotion.type === "Percentage" ? "%" : "₫" }})
+                                </span>
+                            </div>
+                            <span v-else class="text-gray-400 italic">Không áp dụng</span>
+                        </td>
                         <td class="px-6 py-3">
                             <span :class="food.status ? 'text-green-600 font-medium' : 'text-gray-500'">
                                 {{ food.status ? 'Đang bán' : 'Ngừng bán' }}
@@ -103,6 +117,13 @@
                                     title="Sửa">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
+                                <!-- Bật / Tắt -->
+                                <button @click="toggleStatus(food)"
+                                    :class="food.status ? 'text-green-500 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'"
+                                    title="Bật/Tắt bán">
+                                    <i :class="food.status ? 'fa-solid fa-toggle-on' : 'fa-solid fa-toggle-off'"></i>
+                                </button>
+
                             </div>
                         </td>
                     </tr>
@@ -140,7 +161,9 @@ import { formatPrice, formatDate } from '@/utils/format'
 import AddFoodModal from '@/components/foodcomponent/AddFoodModal.vue'
 import UpdateFoodModal from '@/components/foodcomponent/UpdateFoodModal.vue'
 import ViewFoodModal from '@/components/foodcomponent/ViewFoodModal.vue'
+import { useToast } from 'vue-toastification'
 
+const toast = useToast()
 const foodStore = useFoodStore()
 const categoryStore = useCategoryStore()
 
@@ -205,6 +228,17 @@ const selectedFood = ref(null)
 const editFood = (food) => {
     selectedFood.value = food
     showEditModal.value = true
+}
+
+const toggleStatus = async (food) => {
+    try {
+        const newStatus = !food.status
+        await foodStore.updateFoodStatusAction(food.foodId, newStatus)
+        toast.success(`Đã ${newStatus ? 'mở bán' : 'ngừng bán'} món ${food.foodName}`)
+    } catch (err) {
+        toast.error('Cập nhật trạng thái thất bại!')
+        console.error(err)
+    }
 }
 
 

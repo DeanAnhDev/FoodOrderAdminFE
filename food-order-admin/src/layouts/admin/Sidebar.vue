@@ -14,6 +14,14 @@
         Dashboard
       </router-link>
 
+      <router-link to="/billmanagement"
+        class="w-[230px] h-[50px] flex items-center gap-2 font-inter font-extralight text-sm text-left pl-[21px] hover:bg-[#5c6e91] transition">
+        <i class="fa-solid fa-file-invoice"></i>
+        Quản lý đơn hàng
+      </router-link>
+
+
+
       <div class="w-full">
         <button
           class="w-[230px] h-[50px] flex items-center justify-between font-inter font-extralight text-sm text-left pl-[21px] hover:bg-[#5c6e91] transition"
@@ -73,17 +81,7 @@
         Quản lý khuyến mãi
       </router-link>
 
-      <router-link to="/billmanagement"
-        class="w-[230px] h-[50px] flex items-center gap-2 font-inter font-extralight text-sm text-left pl-[21px] hover:bg-[#5c6e91] transition">
-        <i class="fa-solid fa-file-invoice"></i>
-        Quản lý hóa đơn
-      </router-link>
 
-      <router-link to="/generallayout"
-        class="w-[230px] h-[50px] flex items-center gap-2 font-inter font-extralight text-sm text-left pl-[21px] hover:bg-red-700 transition">
-        <i class="fa-solid fa-right-from-bracket"></i>
-        Đăng xuất
-      </router-link>
     </div>
   </div>
 </template>

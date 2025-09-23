@@ -20,6 +20,18 @@
             </option>
           </select>
         </div>
+        <!-- Khuyến mãi -->
+        <div class="mb-3">
+          <label class="block text-sm font-medium">Khuyến mãi (tuỳ chọn)</label>
+          <select v-model="form.promotionId" class="w-full border p-2 rounded">
+            <option :value="null">-- Không áp dụng --</option>
+            <option v-for="promo in promotionStore.promotions.filter(p => p.isActive)" :key="promo.promotionId"
+              :value="promo.promotionId">
+              🎁 {{ promo.promotionName }} -
+              Giảm {{ promo.discountAmount }}{{ promo.type === 'Percentage' ? '%' : '₫' }}
+            </option>
+          </select>
+        </div>
 
         <!-- Mô tả -->
         <div class="mb-3">
@@ -101,6 +113,8 @@ import { useToast } from 'vue-toastification'
 import { useUploadStore } from '@/stores/uploadStore'
 import { useCategoryStore } from '@/stores/categoryStore'
 import { useFoodStore } from '@/stores/foodStore'
+import { usePromotionStore } from '@/stores/promotionStore'
+const promotionStore = usePromotionStore()
 
 const props = defineProps({ isOpen: Boolean })
 const emit = defineEmits(['close', 'created'])
@@ -124,13 +138,17 @@ const form = ref({
     url: '',
     thumbnailUrl: '',
     name: ''
-  }
+  },
+  promotionId: null,
 })
 
 // Tải danh mục nếu chưa có
 onMounted(() => {
   if (categoryStore.categories.length === 0) {
     categoryStore.fetchCategories()
+  }
+  if (promotionStore.promotions.length === 0) {
+    promotionStore.fetchPromotions()
   }
 })
 

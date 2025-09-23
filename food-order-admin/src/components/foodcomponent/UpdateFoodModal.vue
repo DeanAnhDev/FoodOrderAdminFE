@@ -14,8 +14,23 @@
         <div class="mb-3">
           <label class="block text-sm font-medium">Danh mục</label>
           <select v-model="form.foodCategoryId" class="w-full border p-2 rounded" required>
-            <option v-for="cat in categoryStore.categories" :key="cat.foodCategoryId" :value="cat.foodCategoryId">
+            <option v-for="cat in categoryStore.categories" :key="cat.foodCategoryId"
+              :value="Number(cat.foodCategoryId)">
               {{ cat.categoryName }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Khuyến mãi -->
+        <div class="mb-3">
+          <label class="block text-sm font-medium">Khuyến mãi (tuỳ chọn)</label>
+          <select v-model="form.promotionId" class="w-full border p-2 rounded">
+            <option :value="null">-- Không áp dụng --</option>
+            <option v-for="promo in promotionStore.promotions.filter(p => p.isActive)" :key="promo.promotionId"
+              :value="Number(promo.promotionId)">
+              🎁 {{ promo.promotionName }} -
+              Giảm {{ promo.discountAmount
+              }}{{ promo.type === 'Percentage' ? '%' : '₫' }}
             </option>
           </select>
         </div>
@@ -46,7 +61,6 @@
           <label class="block text-sm font-medium">Số lượng</label>
           <input type="number" v-model.number="form.quantity" class="w-full border p-2 rounded" min="0" required />
         </div>
-
 
         <!-- Ảnh -->
         <div class="mb-3">
@@ -83,12 +97,12 @@
             </svg>
             {{ loading ? 'Đang lưu...' : 'Lưu' }}
           </button>
-
         </div>
       </form>
     </div>
   </div>
 </template>
+
 <style scoped>
 @keyframes fade-in {
   0% {
@@ -113,6 +127,7 @@ import { useToast } from 'vue-toastification'
 import { useUploadStore } from '@/stores/uploadStore'
 import { useCategoryStore } from '@/stores/categoryStore'
 import { useFoodStore } from '@/stores/foodStore'
+import { usePromotionStore } from '@/stores/promotionStore'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -124,6 +139,7 @@ const toast = useToast()
 const uploadStore = useUploadStore()
 const categoryStore = useCategoryStore()
 const foodStore = useFoodStore()
+const promotionStore = usePromotionStore()
 
 const loading = ref(false)
 const firstInput = ref(null)
@@ -136,46 +152,35 @@ const form = ref({
   price: 0,
   status: true,
   quantity: 0,
-  images: {
-    id: '',
-    url: '',
-    thumbnailUrl: '',
-    name: ''
-  }
+  promotionId: null,
+  images: { id: '', url: '', thumbnailUrl: '', name: '' }
 })
 
-
-const resetForm = () => {
-  form.value = {
-    foodId: '',
-    foodCategoryId: '',
-    foodName: '',
-    description: '',
-    price: 0,
-    status: true,
-    quantity: 0,
-    images: {
-      id: '',
-      url: '',
-      thumbnailUrl: '',
-      name: ''
-    }
-  }
-}
-
-
-// Gán dữ liệu món ăn vào form khi mở modal
+// Khi mở modal, gán dữ liệu vào form
 watch(
   () => props.isOpen,
-  (val) => {
+  async (val) => {
     if (val && props.food) {
-      form.value = { ...props.food }
-      form.value.images = props.food.images || {
-        id: '',
-        url: '',
-        thumbnailUrl: '',
-        name: ''
+      if (!categoryStore.categories.length) {
+        await categoryStore.fetchCategories()
       }
+      if (!promotionStore.promotions.length) {
+        await promotionStore.fetchPromotions()
+      }
+
+      form.value.foodId = props.food.foodId
+      form.value.foodCategoryId = Number(props.food.foodCategoryId)
+      form.value.foodName = props.food.foodName
+      form.value.description = props.food.description
+      form.value.price = props.food.price
+      form.value.status = props.food.status
+      form.value.quantity = props.food.quantity
+      form.value.promotionId = props.food.promotionId
+        ? Number(props.food.promotionId)
+        : null
+      form.value.images =
+        props.food.images || { id: '', url: '', thumbnailUrl: '', name: '' }
+
       nextTick(() => {
         firstInput.value?.focus()
       })
@@ -192,8 +197,8 @@ const handleImageUpload = async (e) => {
     await uploadStore.remove(oldId)
   }
 
-  const id = crypto.randomUUID()
   try {
+    const id = crypto.randomUUID()
     const imageData = await uploadStore.upload(file, id)
     form.value.images = imageData
   } catch (err) {
@@ -215,7 +220,6 @@ const handleSubmit = async () => {
     emit('updated')
     emit('close')
   } catch (err) {
-    // Nếu backend trả về message thì show message đó
     const backendMessage = err.response?.data?.error || 'Cập nhật thất bại!'
     toast.error(backendMessage)
   } finally {

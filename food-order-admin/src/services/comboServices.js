@@ -24,3 +24,8 @@ export const getAllFoods = () => {
   return axiosClient.get(`Combo/foods`)
 }
 
+export const updateComboStatus = async (id, isActive) => {
+  return axiosClient.patch(`/Combo/${id}/status`, isActive, {
+    headers: { 'Content-Type': 'application/json' }
+  })
+}

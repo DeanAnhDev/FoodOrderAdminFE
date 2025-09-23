@@ -5,7 +5,7 @@ import {
   getPromotionById,
   addPromotion,
   updatePromotion,
-  deletePromotion
+  deletePromotion,
 } from '@/services/promotionService'
 
 export const usePromotionStore = defineStore('promotion', {
@@ -18,13 +18,13 @@ export const usePromotionStore = defineStore('promotion', {
       page: 1,
       pageSize: 10,
       totalItems: 0,
-      totalPages: 0
+      totalPages: 0,
     },
     filters: {
       name: '',
       status: null,
-      sortOrder: 'desc'
-    }
+      sortOrder: 'desc',
+    },
   }),
 
   actions: {
@@ -32,11 +32,11 @@ export const usePromotionStore = defineStore('promotion', {
       this.loading = true
       try {
         const params = {
-          page: this.pagination.page,
+          pageNumber: this.pagination.page,
           pageSize: this.pagination.pageSize,
-          sortOrder: this.filters.sortOrder,
-          name: this.filters.name || undefined,
-          status: this.filters.status !== null ? this.filters.status : undefined
+          startDateFrom: this.filters.startDateFrom || undefined,
+          startDateTo: this.filters.startDateTo || undefined,
+          isActive: this.filters.isActive !== null ? this.filters.isActive : undefined,
         }
 
         const response = await getPromotions(params)
@@ -87,6 +87,6 @@ export const usePromotionStore = defineStore('promotion', {
 
     setFilters(filters) {
       this.filters = { ...this.filters, ...filters }
-    }
-  }
+    },
+  },
 })

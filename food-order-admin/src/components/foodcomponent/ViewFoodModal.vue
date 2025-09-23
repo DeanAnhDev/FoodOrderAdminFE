@@ -23,22 +23,32 @@
           <p>{{ food.foodName }}</p>
         </div>
 
-        <!-- Mô tả -->
-        <div>
-          <strong class="block text-gray-600">Mô tả:</strong>
-          <p>{{ food.description || '(Không có mô tả)' }}</p>
-        </div>
-
         <!-- Danh mục -->
         <div>
           <strong class="block text-gray-600">Danh mục:</strong>
           <p>{{ getCategoryName(food.foodCategoryId) }}</p>
         </div>
 
-        <!-- Giá -->
+        <!-- Mô tả -->
+        <div>
+          <strong class="block text-gray-600">Mô tả:</strong>
+          <p>{{ food.description || '(Không có mô tả)' }}</p>
+        </div>
+
+        <!-- Giá & Khuyến mãi -->
         <div>
           <strong class="block text-gray-600">Giá:</strong>
-          <p>{{ formatPrice(food.price) }}</p>
+          <div v-if="food.promotion">
+            <p class="line-through text-gray-400">{{ formatPrice(food.price) }}</p>
+            <p class="text-red-600 font-bold">
+              {{ formatPrice(getDiscountedPrice(food.price, food.promotion)) }}
+            </p>
+            <p class="text-xs text-green-600">
+              🎁 {{ food.promotion.promotionName }} -
+              Giảm {{ food.promotion.discountAmount }}{{ food.promotion.type === 'Percentage' ? '%' : '₫' }}
+            </p>
+          </div>
+          <p v-else>{{ formatPrice(food.price) }}</p>
         </div>
 
         <!-- Trạng thái -->
@@ -49,21 +59,22 @@
           </p>
         </div>
 
-        <!-- Tình trạng kho -->
+        <!-- Số lượng -->
         <div>
           <strong class="block text-gray-600">Kho:</strong>
-            <p>{{food.quantity }}</p>
+          <p>{{ food.quantity }}</p>
+        </div>
+
+        <!-- Đã bán -->
+        <div>
+          <strong class="block text-gray-600">Đã bán:</strong>
+          <p>{{ food.sold }}</p>
         </div>
 
         <!-- Ngày tạo -->
         <div>
           <strong class="block text-gray-600">Ngày tạo:</strong>
           <p>{{ formatDate(food.createdAt) }}</p>
-        </div>
-
-        <div>
-          <strong class="block text-gray-600">Mô tả</strong>
-          <p>{{ food.description }}</p>
         </div>
       </div>
 
@@ -76,17 +87,20 @@
     </div>
   </div>
 </template>
+
 <style scoped>
 @keyframes fade-in {
   0% {
     transform: scale(0.95);
     opacity: 0;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
   }
 }
+
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
 }
@@ -108,5 +122,15 @@ const categoryStore = useCategoryStore()
 const getCategoryName = (id) => {
   const category = categoryStore.categories.find(cat => cat.foodCategoryId === id)
   return category ? category.categoryName : '---'
+}
+
+// Tính giá sau khuyến mãi
+const getDiscountedPrice = (price, promotion) => {
+  if (!promotion) return price
+  if (promotion.type === 'Percentage') {
+    return Math.max(0, price - (price * promotion.discountAmount) / 100)
+  } else {
+    return Math.max(0, price - promotion.discountAmount)
+  }
 }
 </script>
