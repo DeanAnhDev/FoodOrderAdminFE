@@ -3,6 +3,7 @@ import AccountManagementView from '@/views/AccountManagementView.vue'
 import CategoryManagementView from '@/views/CategoryManagementView.vue'
 import ComboManagementView from '@/views/ComboManagementView.vue'
 import FoodManagementView from '@/views/FoodManagementView.vue'
+import StaffManagementView from '@/views/StaffManagementView.vue'
 import Layout from '@/layouts/admin/Layout.vue'
 import DashboardView from '@/views/DashBoardView.vue'
 import VoucherManagementView from '@/views/VoucherManagementView.vue'
@@ -71,6 +72,13 @@ const routes = [
         component: AccountManagementView,
         beforeEnter: requireAdmin,
         meta: { title: 'Quản lý Tài khoản', requiresAuth: true, roles: ['Admin'] },
+      },
+      {
+        path: 'staff',
+        name: 'staff',
+        component: StaffManagementView,
+        beforeEnter: requireAdmin,
+        meta: { title: 'Quản lý Nhân viên', requiresAuth: true, roles: ['Admin'] },
       },
       {
         path: 'voucher',

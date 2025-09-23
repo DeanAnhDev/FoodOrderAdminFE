@@ -36,7 +36,7 @@
 
         <transition name="slide-fade">
           <div v-if="openAccountMenu" class="flex flex-col ml-8 overflow-hidden">
-            <router-link to="/account"
+            <router-link to="/staff"
               class="w-[190px] h-[40px] flex items-center gap-2 font-inter font-extralight text-sm text-left hover:bg-[#5c6e91] transition rounded">
               <i class="mx-3 fa-solid fa-user-tie"></i>
               Quản lý nhân viên
@@ -113,5 +113,22 @@ const openAccountMenu = ref(false)
 
 .sidebar::-webkit-scrollbar {
   display: none;
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
+.slide-fade-enter-to,
+.slide-fade-leave-from {
+  opacity: 1;
+  max-height: 100px;
 }
 </style>
