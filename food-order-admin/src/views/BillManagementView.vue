@@ -120,11 +120,9 @@
                     </div>
 
                     <div class="order-summary">
-                        <div class="total-amount">
-                            <strong>{{ formatCurrency(order.totalAmount) }}</strong>
-                        </div>
-                        <div class="items-count">
-                            {{ order.orderDetails?.length || 0 }} món
+                        <div class="summary-content">
+                            <div class="total-amount-1">{{ formatCurrency(order.totalAmount) }}</div>
+                            <div class="items-count">{{ order.orderDetails?.length || 0 }} món</div>
                         </div>
                     </div>
 
@@ -133,11 +131,34 @@
                             <i class="fas fa-eye"></i>
                             Chi tiết
                         </button>
-                        <button v-if="canUpdateStatus(order.status)" class="btn btn-primary btn-sm"
-                            @click.stop="showStatusModal(order)">
-                            <i class="fas fa-edit"></i>
-                            Cập nhật
-                        </button>
+
+                        <!-- Chờ xử lý (status = 0) -->
+                        <template v-if="order.status === 0">
+                            <button class="btn btn-success btn-sm" @click.stop="quickUpdateStatus(order, 1)">
+                                <i class="fas fa-check"></i>
+                                Xác nhận đơn hàng
+                            </button>
+                            <button class="btn btn-danger btn-sm" @click.stop="showCancelModal(order)">
+                                <i class="fas fa-times"></i>
+                                Hủy đơn hàng
+                            </button>
+                        </template>
+
+                        <!-- Đã xác nhận (status = 1) -->
+                        <template v-if="order.status === 1">
+                            <button class="btn btn-warning btn-sm" @click.stop="quickUpdateStatus(order, 2)">
+                                <i class="fas fa-clock"></i>
+                                Bắt đầu xử lý
+                            </button>
+                        </template>
+
+                        <!-- Đang xử lý (status = 2) -->
+                        <template v-if="order.status === 2">
+                            <button class="btn btn-primary btn-sm" @click.stop="quickUpdateStatus(order, 3)">
+                                <i class="fas fa-check-double"></i>
+                                Hoàn thành xử lý
+                            </button>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -162,139 +183,209 @@
 
         <!-- Order Details Modal -->
         <div v-if="showDetailsModal" class="modal-overlay" @click="closeDetailsModal">
-            <div class="modal-content large" @click.stop>
+            <div class="modal-content order-details-modal" @click.stop>
                 <div class="modal-header">
-                    <h3>Chi tiết đơn hàng #{{ selectedOrder?.orderCode || selectedOrder?.id }}</h3>
+                    <div class="header-info">
+                        <h3>Chi tiết đơn hàng</h3>
+                        <span class="order-code">#{{ selectedOrder?.orderCode }}</span>
+                    </div>
                     <button @click="closeDetailsModal" class="close-btn">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
+
                 <div class="modal-body" v-if="selectedOrder">
-                    <div class="order-details">
-                        <div class="details-section">
-                            <h4>Thông tin đơn hàng</h4>
-                            <div class="details-grid">
-                                <div class="detail-item">
-                                    <strong>Mã đơn hàng:</strong>
-                                    <span>#{{ selectedOrder.orderCode }}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <strong>Ngày đặt:</strong>
-                                    <span>{{ formatDate(selectedOrder.createdAt) }}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <strong>Trạng thái:</strong>
-                                    <span :class="['status-badge', getStatusClass(selectedOrder.status)]">
-                                        {{ getStatusText(selectedOrder.status) }}
-                                    </span>
-                                </div>
-                                <div class="detail-item">
-                                    <strong>Thanh toán:</strong>
-                                    <span
-                                        :class="['payment-badge', getPaymentStatusClass(selectedOrder.paymentStatus)]">
-                                        {{ getPaymentStatusText(selectedOrder.paymentStatus) }}
-                                    </span>
-                                </div>
-                                <div class="detail-item">
-                                    <strong>Phương thức thanh toán:</strong>
-                                    <span>{{ getPaymentMethodText(selectedOrder.paymentMethod) }}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <strong>Lý do hủy:</strong>
-                                    <span>{{ selectedOrder.reason || 'Không có' }}</span>
-                                </div>
+                    <div class="order-details-container">
+                        <!-- Status and Basic Info Card -->
+                        <div class="info-card">
+                            <div class="card-header">
+                                <i class="fas fa-info-circle"></i>
+                                <h4>Thông tin cơ bản</h4>
                             </div>
-                        </div>
-
-                        <div class="details-section">
-                            <h4>Thông tin khách hàng</h4>
-                            <div v-if="loadingCustomer" class="loading-customer">
-                                <i class="fas fa-spinner fa-spin"></i> Đang tải thông tin khách hàng...
-                            </div>
-                            <div v-else-if="customerInfo" class="details-grid">
-                                <div class="detail-item">
-                                    <strong>Tên khách hàng:</strong>
-                                    <span>{{ customerInfo.fullName || customerInfo.name || 'Chưa có tên' }}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <strong>Email:</strong>
-                                    <span>{{ customerInfo.email || 'Chưa có email' }}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <strong>Số điện thoại:</strong>
-                                    <span>{{ customerInfo.phoneNumber || 'Chưa có SĐT' }}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <strong>User ID:</strong>
-                                    <span>{{ selectedOrder.userId }}</span>
-                                </div>
-                            </div>
-                            <div v-else class="customer-error">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Không thể tải thông tin khách hàng
-                            </div>
-                        </div>
-
-                        <div class="details-section">
-                            <h4>Thông tin đơn hàng</h4>
-                            <div class="details-grid">
-                                <div class="detail-item">
-                                    <strong>Ghi chú:</strong>
-                                    <span>{{ selectedOrder.note || 'Không có ghi chú' }}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <strong>Địa chỉ giao hàng:</strong>
-                                    <span>{{ selectedOrder.address || 'Chưa có địa chỉ' }}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <strong>Voucher ID:</strong>
-                                    <span>{{ selectedOrder.voucherId || 'Không sử dụng' }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="details-section">
-                            <h4>Chi tiết món ăn</h4>
-                            <div class="order-items">
-                                <div v-for="item in selectedOrder.orderDetails || []" :key="item.orderDetailId"
-                                    class="order-item">
-                                    <div class="item-image">
-                                        <img :src="item.itemImage?.thumbnailUrl || item.itemImage?.url"
-                                            :alt="item.itemName" class="food-image" />
+                            <div class="card-content">
+                                <div class="status-row">
+                                    <div class="status-item">
+                                        <span class="label">Trạng thái đơn hàng:</span>
+                                        <span :class="['status-badge', getStatusClass(selectedOrder.status)]">
+                                            <i class="fas fa-circle"></i>
+                                            {{ getStatusText(selectedOrder.status) }}
+                                        </span>
                                     </div>
-                                    <div class="item-info">
-                                        <div class="item-name">{{ item.itemName }}</div>
-                                        <div class="item-details">
-                                            <div>Số lượng: {{ item.quantity }}</div>
-                                            <div>Giá gốc: {{ formatCurrency(item.originalPrice) }}</div>
-                                            <div>Giá sau giảm: {{ formatCurrency(item.discountedPrice) }}</div>
-                                            <div>{{ item.foodId ? 'Món ăn' : 'Combo' }} ID: {{ item.foodId ||
-                                                item.comboId }}</div>
+                                    <div class="status-item">
+                                        <span class="label">Thanh toán:</span>
+                                        <span
+                                            :class="['payment-badge', getPaymentStatusClass(selectedOrder.paymentStatus)]">
+                                            <i class="fas fa-credit-card"></i>
+                                            {{ getPaymentStatusText(selectedOrder.paymentStatus) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <div>
+                                            <span class="label">Ngày đặt</span>
+                                            <span class="value">{{ formatDate(selectedOrder.createdAt) }}</span>
                                         </div>
                                     </div>
-                                    <div class="item-total">
-                                        {{ formatCurrency(item.totalPrice) }}
+                                    <div class="info-item">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        <div>
+                                            <span class="label">Phương thức thanh toán</span>
+                                            <span class="value">{{ getPaymentMethodText(selectedOrder.paymentMethod)
+                                                }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="order-total">
-                                <div class="total-breakdown">
-                                    <div class="total-item">
+                        <!-- Customer Info Card -->
+                        <div class="info-card">
+                            <div class="card-header">
+                                <i class="fas fa-user"></i>
+                                <h4>Thông tin khách hàng</h4>
+                            </div>
+                            <div class="card-content">
+                                <div v-if="loadingCustomer" class="loading-state">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <span>Đang tải thông tin khách hàng...</span>
+                                </div>
+                                <div v-else-if="customerInfo" class="customer-info">
+                                    <div class="customer-avatar">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="customer-details">
+                                        <h5>{{ customerInfo.fullName || customerInfo.name || 'Khách hàng' }}</h5>
+                                        <div class="contact-info">
+                                            <div class="contact-item" v-if="customerInfo.email">
+                                                <i class="fas fa-envelope"></i>
+                                                <span>{{ customerInfo.email }}</span>
+                                            </div>
+                                            <div class="contact-item" v-if="customerInfo.phoneNumber">
+                                                <i class="fas fa-phone"></i>
+                                                <span>{{ customerInfo.phoneNumber }}</span>
+                                            </div>
+                                            <div class="contact-item">
+                                                <i class="fas fa-id-badge"></i>
+                                                <span>ID: {{ selectedOrder.userId }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else class="error-state">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Không thể tải thông tin khách hàng</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Delivery Info Card -->
+                        <div class="info-card">
+                            <div class="card-header">
+                                <i class="fas fa-shipping-fast"></i>
+                                <h4>Thông tin giao hàng</h4>
+                            </div>
+                            <div class="card-content">
+                                <div class="delivery-info">
+                                    <div class="address-item">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <div>
+                                            <span class="label">Địa chỉ giao hàng</span>
+                                            <span class="value">{{ selectedOrder.address || 'Chưa có địa chỉ' }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="note-item" v-if="selectedOrder.note">
+                                        <i class="fas fa-sticky-note"></i>
+                                        <div>
+                                            <span class="label">Ghi chú</span>
+                                            <span class="value">{{ selectedOrder.note }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="reason-item" v-if="selectedOrder.reason">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        <div>
+                                            <span class="label">Lý do hủy</span>
+                                            <span class="value reason-text">{{ selectedOrder.reason }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Items Card -->
+                        <div class="info-card">
+                            <div class="card-header">
+                                <i class="fas fa-utensils"></i>
+                                <h4>Chi tiết món ăn</h4>
+                            </div>
+                            <div class="card-content">
+                                <div class="order-items">
+                                    <div v-for="item in selectedOrder.orderDetails || []" :key="item.orderDetailId"
+                                        class="order-item">
+                                        <div class="item-image">
+                                            <img :src="item.itemImage?.thumbnailUrl || item.itemImage?.url"
+                                                :alt="item.itemName" />
+                                        </div>
+                                        <div class="item-details">
+                                            <h5 class="item-name">{{ item.itemName }}</h5>
+                                            <div class="item-meta">
+                                                <span class="item-type">{{ item.foodId ? 'Món ăn' : 'Combo' }}</span>
+                                                <span class="item-id">ID: {{ item.foodId || item.comboId }}</span>
+                                            </div>
+                                            <div class="price-info">
+                                                <div class="price-row"
+                                                    v-if="item.originalPrice !== item.discountedPrice">
+                                                    <span class="original-price">{{ formatCurrency(item.originalPrice)
+                                                        }}</span>
+                                                    <span class="discounted-price">{{
+                                                        formatCurrency(item.discountedPrice) }}</span>
+                                                </div>
+                                                <div class="price-row" v-else>
+                                                    <span class="current-price">{{ formatCurrency(item.discountedPrice)
+                                                        }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="item-quantity">
+                                            <span class="quantity">x{{ item.quantity }}</span>
+                                        </div>
+                                        <div class="item-total">
+                                            <span class="total-price">{{ formatCurrency(item.totalPrice) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Summary Card -->
+                        <div class="info-card summary-card">
+                            <div class="card-header">
+                                <i class="fas fa-calculator"></i>
+                                <h4>Tổng kết đơn hàng</h4>
+                            </div>
+                            <div class="card-content">
+                                <div class="order-summary">
+                                    <div class="summary-row">
                                         <span>Tổng phụ:</span>
                                         <span>{{ formatCurrency(selectedOrder.subtotalAmount) }}</span>
                                     </div>
-                                    <div class="total-item">
+                                    <div class="summary-row">
                                         <span>Phí ship:</span>
                                         <span>{{ formatCurrency(selectedOrder.shipFee) }}</span>
                                     </div>
-                                    <div class="total-item" v-if="selectedOrder.voucherDiscountAmount > 0">
-                                        <span>Giảm giá voucher:</span>
+                                    <div class="summary-row discount-row"
+                                        v-if="selectedOrder.voucherDiscountAmount > 0">
+                                        <span><i class="fas fa-tag"></i> Giảm giá voucher:</span>
                                         <span class="discount">-{{ formatCurrency(selectedOrder.voucherDiscountAmount)
                                         }}</span>
                                     </div>
-                                    <div class="total-row final-total">
-                                        <strong>Tổng cộng: {{ formatCurrency(selectedOrder.totalAmount) }}</strong>
+                                </div>
+                                <div class="total-summary">
+                                    <div class="total-row">
+                                        <span class="total-label">Tổng cộng:</span>
+                                        <span class="total-amount">{{ formatCurrency(selectedOrder.totalAmount)
+                                        }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -344,6 +435,74 @@
                 </div>
             </div>
         </div>
+
+        <!-- Cancel Order Modal -->
+        <div v-if="showCancelModalRef" class="modal-overlay" @click="closeCancelModal">
+            <div class="modal-content" @click.stop>
+                <div class="modal-header">
+                    <h3>Hủy đơn hàng #{{ selectedOrder?.orderCode }}</h3>
+                    <button @click="closeCancelModal" class="close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Chọn lý do hủy đơn hàng:</label>
+                        <div class="cancel-reasons">
+                            <label class="reason-option">
+                                <input type="radio" v-model="cancelReason" value="Khách hàng yêu cầu hủy">
+                                <span>Khách hàng yêu cầu hủy</span>
+                            </label>
+                            <label class="reason-option">
+                                <input type="radio" v-model="cancelReason" value="Hết nguyên liệu">
+                                <span>Hết nguyên liệu</span>
+                            </label>
+                            <label class="reason-option">
+                                <input type="radio" v-model="cancelReason" value="Không thể liên lạc khách hàng">
+                                <span>Không thể liên lạc khách hàng</span>
+                            </label>
+                            <label class="reason-option">
+                                <input type="radio" v-model="cancelReason" value="other">
+                                <span>Lý do khác</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div v-if="cancelReason === 'other'" class="form-group">
+                        <label for="customReason">Nhập lý do cụ thể:</label>
+                        <textarea id="customReason" v-model="customCancelReason" class="form-textarea"
+                            placeholder="Vui lòng nhập lý do hủy đơn hàng..." rows="3"></textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button @click="closeCancelModal" class="btn btn-secondary">
+                            Hủy bỏ
+                        </button>
+                        <button @click="confirmCancelOrder" class="btn btn-danger"
+                            :disabled="!cancelReason || (cancelReason === 'other' && !customCancelReason.trim())">
+                            <i class="fas fa-times"></i>
+                            Xác nhận hủy đơn
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div v-if="toast.show" :class="['toast-notification', `toast-${toast.type}`]" @click="hideToast">
+            <div class="toast-content">
+                <div class="toast-icon">
+                    <i v-if="toast.type === 'success'" class="fas fa-check-circle"></i>
+                    <i v-else-if="toast.type === 'error'" class="fas fa-exclamation-circle"></i>
+                    <i v-else-if="toast.type === 'warning'" class="fas fa-exclamation-triangle"></i>
+                    <i v-else-if="toast.type === 'info'" class="fas fa-info-circle"></i>
+                </div>
+                <div class="toast-message">{{ toast.message }}</div>
+                <button @click="hideToast" class="toast-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -367,12 +526,22 @@ export default {
 
         const showDetailsModal = ref(false)
         const showUpdateModal = ref(false)
+        const showCancelModalRef = ref(false)
         const selectedOrder = ref(null)
         const newStatus = ref('')
+        const cancelReason = ref('')
+        const customCancelReason = ref('')
         const customerInfo = ref(null)
         const loadingCustomer = ref(false)
         const customerNames = ref(new Map()) // Map để lưu userId -> customerName
         const loadingCustomerNames = ref(false)
+
+        // Toast notification
+        const toast = ref({
+            show: false,
+            message: '',
+            type: 'success' // success, error, warning, info
+        })
 
         // Computed
         const currentPage = computed(() => orderStore.currentPage)
@@ -478,20 +647,106 @@ export default {
             newStatus.value = ''
         }
 
+        const showCancelModal = (order) => {
+            selectedOrder.value = order
+            cancelReason.value = ''
+            customCancelReason.value = ''
+            showCancelModalRef.value = true
+        }
+
+        const closeCancelModal = () => {
+            showCancelModalRef.value = false
+            selectedOrder.value = null
+            cancelReason.value = ''
+            customCancelReason.value = ''
+        }
+
+        const confirmCancelOrder = async () => {
+            if (!selectedOrder.value || !cancelReason.value) return
+
+            // Determine final reason
+            const finalReason = cancelReason.value === 'other'
+                ? customCancelReason.value.trim()
+                : cancelReason.value
+
+            if (!finalReason) return
+
+            try {
+                const result = await orderStore.changeOrderStatus({
+                    orderId: selectedOrder.value.orderId,
+                    newStatus: 6,
+                    reason: finalReason
+                })
+
+                closeCancelModal()
+
+                // Sử dụng message từ API response
+                if (orderStore.successMessage) {
+                    showToast(orderStore.successMessage, 'success')
+                } else {
+                    showToast('Đã hủy đơn hàng thành công', 'success')
+                }
+
+                // Load lại danh sách đơn hàng
+                await loadOrders(searchQuery.value)
+            } catch (error) {
+                console.error('Failed to cancel order:', error)
+                const errorMessage = orderStore.error || 'Hủy đơn hàng thất bại. Vui lòng thử lại!'
+                showToast(errorMessage, 'error')
+            }
+        }
+
         const updateOrderStatus = async () => {
             if (!selectedOrder.value || !newStatus.value) return
 
             try {
-                await orderStore.changeOrderStatus({
+                const result = await orderStore.changeOrderStatus({
                     orderId: selectedOrder.value.orderId,
                     newStatus: parseInt(newStatus.value)
                 })
 
                 closeUpdateModal()
-                // Reload orders to reflect changes
-                loadOrders(searchQuery.value)
+
+                // Sử dụng message từ API response
+                if (orderStore.successMessage) {
+                    showToast(orderStore.successMessage, 'success')
+                } else {
+                    const statusText = getStatusText(parseInt(newStatus.value))
+                    showToast(`Cập nhật trạng thái đơn hàng thành công: ${statusText}`, 'success')
+                }
+
+                // Load lại danh sách đơn hàng
+                await loadOrders(searchQuery.value)
             } catch (error) {
                 console.error('Failed to update order status:', error)
+                // Hiển thị error message từ store nếu có, hoặc message mặc định
+                const errorMessage = orderStore.error || 'Cập nhật trạng thái thất bại. Vui lòng thử lại!'
+                showToast(errorMessage, 'error')
+            }
+        }
+
+        const quickUpdateStatus = async (order, newStatusValue) => {
+            try {
+                const result = await orderStore.changeOrderStatus({
+                    orderId: order.orderId,
+                    newStatus: newStatusValue
+                })
+
+                // Sử dụng message từ API response
+                if (orderStore.successMessage) {
+                    showToast(orderStore.successMessage, 'success')
+                } else {
+                    const statusText = getStatusText(newStatusValue)
+                    showToast(`Cập nhật trạng thái đơn hàng thành công: ${statusText}`, 'success')
+                }
+
+                // Load lại danh sách đơn hàng
+                await loadOrders(searchQuery.value)
+            } catch (error) {
+                console.error('Failed to update order status:', error)
+                // Hiển thị error message từ store nếu có, hoặc message mặc định
+                const errorMessage = orderStore.error || 'Cập nhật trạng thái thất bại. Vui lòng thử lại!'
+                showToast(errorMessage, 'error')
             }
         }
 
@@ -574,6 +829,23 @@ export default {
             return ![5, 6].includes(status) // Không cho cập nhật nếu đã hoàn thành hoặc đã hủy
         }
 
+        // Toast functions
+        const showToast = (message, type = 'success') => {
+            toast.value = {
+                show: true,
+                message,
+                type
+            }
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                toast.value.show = false
+            }, 3000)
+        }
+
+        const hideToast = () => {
+            toast.value.show = false
+        }
+
         // Lifecycle
         onMounted(() => {
             loadOrders()
@@ -590,6 +862,10 @@ export default {
             loadingCustomer,
             currentPage,
             totalPages,
+            toast,
+            showCancelModalRef,
+            cancelReason,
+            customCancelReason,
             loadOrders,
             handleSearch,
             filterByStatus,
@@ -600,6 +876,10 @@ export default {
             showStatusModal,
             closeUpdateModal,
             updateOrderStatus,
+            quickUpdateStatus,
+            showCancelModal,
+            closeCancelModal,
+            confirmCancelOrder,
             getCustomerName,
             formatDate,
             formatCurrency,
@@ -608,7 +888,9 @@ export default {
             getPaymentStatusClass,
             getPaymentStatusText,
             getPaymentMethodText,
-            canUpdateStatus
+            canUpdateStatus,
+            showToast,
+            hideToast
         }
     }
 }
@@ -1014,27 +1296,35 @@ export default {
 }
 
 .order-summary {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 15px;
-    padding-top: 10px;
+    padding-top: 15px;
     border-top: 1px solid #f0f0f0;
 }
 
-.total-amount {
+.summary-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-amount-1 {
     font-size: 16px;
-    color: #28a745;
+    font-weight: 600;
+    color: #212529;
 }
 
 .items-count {
     font-size: 14px;
     color: #6c757d;
+    font-weight: 500;
 }
 
 .order-actions {
     display: flex;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+    align-items: center;
 }
 
 /* Buttons */
@@ -1051,35 +1341,101 @@ export default {
 }
 
 .btn-sm {
-    padding: 4px 8px;
-    font-size: 11px;
+    padding: 4px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: auto;
+}
+
+.btn-sm i {
+    margin-right: 3px;
+    font-size: 10px;
 }
 
 .btn-info {
-    background-color: #17a2b8;
+    background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
     color: white;
+    border: none;
+    box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
+    transition: all 0.3s ease;
 }
 
 .btn-info:hover {
-    background-color: #138496;
+    background: linear-gradient(135deg, #138496 0%, #1e7e34 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(23, 162, 184, 0.4);
 }
 
 .btn-primary {
-    background-color: #007bff;
+    background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
     color: white;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+    transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
+    background: linear-gradient(135deg, #0056b3 0%, #520dc2 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #1e7e34 0%, #17a085 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: #212529;
+    border: none;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #e0a800 0%, #dc6502 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c82333 0%, #c0392b 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
 }
 
 .btn-secondary {
-    background-color: #6c757d;
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
     color: white;
+    border: none;
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+    transition: all 0.3s ease;
 }
 
 .btn-secondary:hover {
-    background-color: #545b62;
+    background: linear-gradient(135deg, #545b62 0%, #343a40 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4);
 }
 
 /* Pagination */
@@ -1326,7 +1682,457 @@ export default {
     border-top: 1px solid #e5e5e5;
 }
 
+/* Order Details Modal Styling */
+.order-details-modal {
+    max-width: 900px;
+    max-height: 85vh;
+    width: 90vw;
+}
+
+.modal-header .header-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.modal-header .order-code {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.order-details-container {
+    display: grid;
+    gap: 20px;
+    padding: 5px;
+}
+
+/* Info Cards */
+.info-card {
+    background: #fff;
+    border: 1px solid #e1e5e9;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.2s ease;
+}
+
+.info-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 15px 20px;
+    border-bottom: 1px solid #e1e5e9;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-header i {
+    color: #495057;
+    font-size: 16px;
+}
+
+.card-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #212529;
+}
+
+.card-content {
+    padding: 20px;
+}
+
+/* Status and Basic Info */
+.status-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.status-item .label {
+    font-size: 13px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.status-badge i {
+    font-size: 8px;
+}
+
+.payment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.info-item i {
+    color: #495057;
+    margin-top: 2px;
+    font-size: 14px;
+}
+
+.info-item div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-item .label {
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.info-item .value {
+    font-size: 14px;
+    color: #212529;
+    font-weight: 500;
+}
+
+/* Customer Info */
+.loading-state,
+.error-state {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    text-align: center;
+    justify-content: center;
+    color: #6c757d;
+}
+
+.customer-info {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+}
+
+.customer-avatar {
+    flex-shrink: 0;
+}
+
+.customer-avatar i {
+    font-size: 48px;
+    color: #495057;
+}
+
+.customer-details h5 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    color: #212529;
+    font-weight: 600;
+}
+
+.contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #495057;
+}
+
+.contact-item i {
+    width: 16px;
+    color: #6c757d;
+}
+
+/* Delivery Info */
+.delivery-info {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.address-item,
+.note-item,
+.reason-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.address-item i,
+.note-item i,
+.reason-item i {
+    color: #495057;
+    margin-top: 2px;
+    font-size: 14px;
+    width: 16px;
+}
+
+.reason-item {
+    background: #fff5f5;
+    border-left: 4px solid #e53e3e;
+}
+
+.reason-text {
+    color: #e53e3e !important;
+}
+
+/* Order Items */
+.order-items {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.order-item {
+    display: grid;
+    grid-template-columns: 80px 1fr auto auto;
+    gap: 15px;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.item-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.item-details h5 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #212529;
+}
+
+.item-meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.item-type {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.item-id {
+    background: #f3e5f5;
+    color: #7b1fa2;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.price-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.price-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.discounted-price,
+.current-price {
+    color: #28a745;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.item-quantity {
+    text-align: center;
+}
+
+.quantity {
+    background: #495057;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.item-total {
+    text-align: right;
+}
+
+.total-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: #212529;
+}
+
+/* Order Summary */
+.summary-card {
+    border: 2px solid #e3f2fd;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.order-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 14px;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.discount-row {
+    color: #28a745;
+}
+
+.discount-row i {
+    margin-right: 5px;
+}
+
+.discount {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.total-summary {
+    border-top: 2px solid #dee2e6;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+.total-row {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.total-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+}
+
+.total-amount {
+    font-size: 24px;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 /* Responsive */
+@media (max-width: 768px) {
+    .order-details-modal {
+        width: 95vw;
+        max-height: 90vh;
+    }
+
+    .status-row,
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .order-item {
+        grid-template-columns: 60px 1fr;
+        gap: 10px;
+    }
+
+    .item-quantity,
+    .item-total {
+        grid-column: 2;
+        text-align: left;
+        margin-top: 10px;
+    }
+
+    .customer-info {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
 @media (max-width: 768px) {
     .search-controls {
         gap: 10px;
@@ -1346,7 +2152,15 @@ export default {
     }
 
     .order-actions {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 5px;
+    }
+
+    .order-actions .btn-sm {
+        font-size: 9px;
+        padding: 3px 5px;
     }
 
     .details-grid {
@@ -1368,6 +2182,92 @@ export default {
     }
 }
 
+/* Toast Notification */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    max-width: 500px;
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    animation: slideInRight 0.3s ease-out;
+    cursor: pointer;
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    gap: 12px;
+}
+
+.toast-icon {
+    flex-shrink: 0;
+    font-size: 20px;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.toast-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 14px;
+    opacity: 0.7;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: opacity 0.2s ease;
+}
+
+.toast-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Toast Types */
+.toast-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.toast-error {
+    background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+    color: white;
+}
+
+.toast-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: #212529;
+}
+
+.toast-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
+    color: white;
+}
+
+/* Toast Animation */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
 /* Customer Info Styles */
 .loading-customer {
     text-align: center;
@@ -1385,5 +2285,91 @@ export default {
 
 .customer-error i {
     margin-right: 8px;
+}
+
+/* Cancel Modal Styles */
+.cancel-reasons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.reason-option {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+
+.reason-option:hover {
+    border-color: #007bff;
+    background-color: #f8f9ff;
+}
+
+.reason-option input[type="radio"] {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+    accent-color: #007bff;
+}
+
+.reason-option input[type="radio"]:checked+span {
+    color: #007bff;
+    font-weight: 600;
+}
+
+.reason-option span {
+    flex: 1;
+    font-size: 14px;
+    color: #495057;
+    transition: color 0.3s ease;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.3s ease;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-textarea::placeholder {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: linear-gradient(135deg, #999 0%, #777 100%);
+}
+
+.btn-danger:disabled:hover {
+    transform: none;
+    box-shadow: none;
 }
 </style>
