@@ -9,6 +9,7 @@ import DashboardView from '@/views/DashBoardView.vue'
 import VoucherManagementView from '@/views/VoucherManagementView.vue'
 import PromotionManagementView from '@/views/PromotionManagementView.vue'
 import BillManagementView from '@/views/BillManagementView.vue'
+import RevenueView from '@/views/RevenueView.vue'
 import LoginView from '@/views/LoginView.vue'
 import UnauthorizedView from '@/views/UnauthorizedView.vue'
 import { requireAuth, requireAdmin, requireManager, guestOnly } from '@/middleware/auth'
@@ -100,6 +101,13 @@ const routes = [
         component: BillManagementView,
         beforeEnter: requireManager,
         meta: { title: 'Quản lý Đơn hàng', requiresAuth: true, roles: ['Admin', 'Manager'] },
+      },
+      {
+        path: 'revenue',
+        name: 'revenue',
+        component: RevenueView,
+        beforeEnter: requireManager,
+        meta: { title: 'Báo cáo doanh thu', requiresAuth: true, roles: ['Admin', 'Manager'] },
       },
     ],
   },

@@ -11,3 +11,7 @@ export const getOrders = async (query) => {
 export const updateOrderStatus = async (data) => {
   return axiosClient.put('/order/status', data)
 }
+
+export const getRevenue = async (params) => {
+  return axiosClient.get('/order/revenue', { params })
+}

@@ -1,8 +1,15 @@
 export const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
-    currency: 'VND'
+    currency: 'VND',
   }).format(price)
+}
+
+export const formatMoney = (amount) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+  }).format(amount)
 }
 
 export const formatDate = (dateStr) => {
@@ -11,6 +18,6 @@ export const formatDate = (dateStr) => {
   return date.toLocaleDateString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric'
+    year: 'numeric',
   })
 }

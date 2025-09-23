@@ -4,20 +4,26 @@
     :style="{ top: '0px', height: '100vh' }" :class="{ '-translate-x-full': !isOpen }">
     <div class="flex items-center px-4 pt-4">
       <img src="@/assets/img/logo.png" alt="Ảnh" class="w-[31px] h-[38px] object-contain rounded mr-2" />
-      <span class="text-lg font-extralight font-inter text-white">Admin DashBoard</span>
+      <span class="text-lg font-extralight font-inter text-white">Trang quản trị</span>
     </div>
 
     <div class="mt-6 flex flex-col items-start">
       <router-link :to="{ name: 'dashboard' }"
         class="w-[230px] h-[50px] flex items-center gap-2 font-inter font-extralight text-sm text-left pl-[21px] hover:bg-[#5c6e91] transition">
         <i class="fa-solid fa-gauge"></i>
-        Dashboard
+        Tổng quan
       </router-link>
 
       <router-link to="/billmanagement"
         class="w-[230px] h-[50px] flex items-center gap-2 font-inter font-extralight text-sm text-left pl-[21px] hover:bg-[#5c6e91] transition">
         <i class="fa-solid fa-file-invoice"></i>
         Quản lý đơn hàng
+      </router-link>
+
+      <router-link to="/revenue"
+        class="w-[230px] h-[50px] flex items-center gap-2 font-inter font-extralight text-sm text-left pl-[21px] hover:bg-[#5c6e91] transition">
+        <i class="fa-solid fa-chart-line"></i>
+        Báo cáo doanh thu
       </router-link>
 
 

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { createOrder, getOrders, updateOrderStatus } from '@/services/orderService'
+import { createOrder, getOrders, updateOrderStatus, getRevenue } from '@/services/orderService'
 
 export const useOrderStore = defineStore('order', {
   state: () => ({
@@ -15,7 +15,9 @@ export const useOrderStore = defineStore('order', {
     loading: false,
     error: null,
     successMessage: null,
-    query: {
+
+    // Query filter cho Orders
+    orderQuery: {
       orderCode: null,
       status: null,
       paymentStatus: null,
@@ -24,26 +26,47 @@ export const useOrderStore = defineStore('order', {
       sortBy: 'CreatedAt',
       sortOrder: 'desc',
     },
+
+    // Query filter cho Revenue
+    revenueQuery: {
+      StartDate: null,
+      EndDate: null,
+      Period: 'daily', // 'daily', 'weekly', 'monthly', 'yearly'
+    },
+
+    revenue: null,
   }),
 
   actions: {
+    /** ================= Revenue ================= */
+    async fetchRevenue(customQuery = {}) {
+      this.loading = true
+      this.error = null
+      try {
+        const res = await getRevenue({ ...this.revenueQuery, ...customQuery })
+        this.revenue = res.data
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Không thể tải dữ liệu doanh thu'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /** ================= Orders ================= */
     async fetchOrders(customQuery = {}) {
       this.loading = true
       this.error = null
       try {
-        // Admin có thể xem tất cả đơn hàng, không cần lọc theo userId
         const finalQuery = {
-          ...this.query,
+          ...this.orderQuery,
           ...customQuery,
         }
 
-        // Cập nhật query trong store để đồng bộ state
-        this.query = { ...finalQuery }
-
-        // Chỉ thêm userId nếu được truyền vào customQuery
-        console.log('Query sent to API:', finalQuery)
+        // Cập nhật query trong store
+        this.orderQuery = { ...finalQuery }
 
         const res = await getOrders(finalQuery)
+
         // backend trả về { orders, totalCount, currentPage, pageSize, totalPages, hasPreviousPage, hasNextPage }
         this.orders = res.data.orders || []
         this.total = res.data.totalCount || 0
@@ -70,7 +93,7 @@ export const useOrderStore = defineStore('order', {
           this.successMessage = res.data.message
           this.currentOrder = res.data.order
 
-          // cập nhật lại trong list nếu có
+          // Cập nhật trong list nếu có
           const idx = this.orders.findIndex((o) => o.id === res.data.order?.id)
           if (idx !== -1) {
             this.orders[idx] = res.data.order
