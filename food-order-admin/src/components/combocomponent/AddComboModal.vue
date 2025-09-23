@@ -35,7 +35,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Khuyến mãi</label>
             <select v-model="form.promotionId"
               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition text-gray-700">
-              <option value="null">🎁 Chọn khuyến mãi (tuỳ chọn)</option>
+              <option :value="null">🎁 Chọn khuyến mãi (tuỳ chọn)</option>
               <option v-for="promo in promotionStore.promotions.filter(p => p.isActive)" :key="promo.promotionId"
                 :value="promo.promotionId">
                 {{ promo.promotionName }} - Giảm {{ promo.discountAmount }}{{ promo.type === 'Percentage' ? '%' : '₫' }}
@@ -189,7 +189,7 @@ const form = ref({
   images: null,
   quantity: 1,
   foods: [],
-  promotionId: ''
+  promotionId: null
 })
 
 const resetForm = () => {
@@ -200,7 +200,8 @@ const resetForm = () => {
     description: '',
     images: null,
     quantity: 1,
-    foods: []
+    foods: [],
+    promotionId: null
   }
   searchQuery.value = ''
 }
@@ -264,7 +265,22 @@ const submit = async () => {
   }
 
   try {
-    await comboStore.createCombo(form.value)
+    // Chuẩn bị data theo đúng DTO format
+    const comboData = {
+      comboName: form.value.comboName.trim(),
+      foodCategoryId: parseInt(form.value.foodCategoryId),
+      price: parseFloat(form.value.price),
+      description: form.value.description.trim(),
+      images: form.value.images,
+      quantity: parseInt(form.value.quantity),
+      foods: form.value.foods.map(f => ({
+        foodId: f.foodId,
+        quantity: parseInt(f.quantity)
+      })),
+      promotionId: form.value.promotionId // null hoặc số nguyên
+    }
+
+    await comboStore.createCombo(comboData)
     toast.success('Tạo combo thành công!')
     emit('created')
     emit('close')
