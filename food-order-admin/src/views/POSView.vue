@@ -117,7 +117,7 @@
                             <div v-if="!item.status || item.quantity <= 0"
                                 class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
                                 <span class="text-white font-bold text-sm">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
-                                }}</span>
+                                    }}</span>
                             </div>
 
                             <!-- Promotion badge -->
@@ -381,15 +381,15 @@
                     <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-check text-2xl text-green-500"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Đặt hàng thành công!</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Thanh toán thành công!</h3>
                     <p class="text-gray-600 mb-4">
-                        Đơn hàng #{{ lastOrderId }} đã được tạo thành công.
+                        Đơn hàng #{{ lastOrderId }} đã được thanh toán thành công.
                     </p>
                     <div class="flex space-x-3">
-                        <button @click="showReceiptModal = true"
+                        <!-- <button @click="showReceiptModal = true"
                             class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">
                             In hóa đơn
-                        </button>
+                        </button> -->
                         <button @click="showSuccessModal = false"
                             class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg">
                             Đóng
@@ -632,7 +632,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { formatCurrency } from '@/utils/format'
 import { useFoodStore } from '@/stores/foodStore'
 import { useComboStore } from '@/stores/comboStore'
@@ -643,6 +643,7 @@ import { useVoucherStore } from '@/stores/voucherStore'
 import ReceiptModal from '@/components/ReceiptModal.vue'
 
 const router = useRouter()
+const route = useRoute()
 const foodStore = useFoodStore()
 const comboStore = useComboStore()
 const orderStore = useOrderStore()
@@ -1276,17 +1277,20 @@ const handlePaymentConfirm = async (paymentData) => {
                 createdAt: new Date()
             }
 
-            // Handle VNPay payment URL if available
-            if (result.paymentUrl && paymentData.paymentMethod === 1) {
-                // Open VNPay payment URL in new window
-                window.open(result.paymentUrl, '_blank')
-                showInfoToast('Đã mở cửa sổ thanh toán VNPay')
+            // Handle different payment methods
+            if (paymentData.paymentMethod === 1 && result.paymentUrl) {
+                // VNPay payment - redirect to VNPay, the response will be handled by checkout-success/checkout-failed pages
+                window.location.href = result.paymentUrl
+                showInfoToast('Đang chuyển hướng đến VNPay...')
+                // Don't clear cart or show success modal for VNPay, let the callback pages handle it
+            } else {
+                // Cash payment - show success notification and modal
+                clearCart()
+                // Load lại danh sách hóa đơn chờ sau khi thanh toán thành công
+                await loadTemporaryCarts()
+                showSuccessModal.value = true
+                showSuccessToast('Thanh toán thành công!')
             }
-
-            // Clear cart and show success
-            clearCart()
-            showSuccessModal.value = true
-            showSuccessToast(result.message || 'Đặt hàng thành công!')
         } else {
             throw new Error(result.message || 'Tạo đơn hàng thất bại')
         }
@@ -1566,8 +1570,22 @@ watch(paymentMethod, (newMethod) => {
 })
 
 // Lifecycle
-onMounted(() => {
-    loadData()
+onMounted(async () => {
+    await loadData()
+
+    // Kiểm tra nếu có tham số reload=true từ checkout pages
+    if (route.query.reload === 'true') {
+        await loadTemporaryCarts()
+        showSuccessToast('Danh sách hóa đơn chờ đã được cập nhật!')
+
+        // Xóa query parameter khỏi URL để tránh reload lại khi user refresh
+        router.replace({ path: '/pos' })
+    }
+
+    // Kiểm tra nếu có tham số retry=true (từ failed payment)
+    if (route.query.retry === 'true') {
+        showInfoToast('Vui lòng thử lại thanh toán!')
+    }
 })
 </script>
 

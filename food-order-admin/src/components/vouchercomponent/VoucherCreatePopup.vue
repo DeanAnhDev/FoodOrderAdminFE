@@ -34,7 +34,8 @@
         <div>
           <label class="block text-sm font-medium">Giảm tối đa (VNĐ)</label>
           <input v-model.number="form.maxDiscountPrice" type="number" min="0"
-            class="w-full border p-2 rounded focus:ring focus:ring-blue-200 outline-none" />
+            class="w-full border p-2 rounded focus:ring focus:ring-blue-200 outline-none disabled:bg-gray-100 disabled:text-gray-500"
+            :disabled="form.type === 'Amount'" />
         </div>
 
         <!-- Ngày -->
@@ -94,7 +95,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from "vue"
+import { reactive, ref, watch } from "vue"
 import { useVoucherStore } from "@/stores/voucherStore"
 import { useToast } from "vue-toastification"
 
@@ -118,6 +119,13 @@ const form = reactive({
 })
 
 const today = new Date().toISOString().split("T")[0]
+
+// Reset maxDiscountPrice khi chuyển sang loại "Amount"
+watch(() => form.type, (newType) => {
+  if (newType === 'Amount') {
+    form.maxDiscountPrice = 0
+  }
+})
 
 const handleSubmit = async () => {
   if (!form.startDate || !form.endDate) {

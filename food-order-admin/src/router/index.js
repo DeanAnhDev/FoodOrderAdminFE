@@ -11,6 +11,8 @@ import PromotionManagementView from '@/views/PromotionManagementView.vue'
 import BillManagementView from '@/views/BillManagementView.vue'
 import RevenueView from '@/views/RevenueView.vue'
 import POSView from '@/views/POSView.vue'
+import CheckoutSuccessView from '@/views/CheckoutSuccessView.vue'
+import CheckoutFailedView from '@/views/CheckoutFailedView.vue'
 import LoginView from '@/views/LoginView.vue'
 import UnauthorizedView from '@/views/UnauthorizedView.vue'
 import { requireAuth, requireAdmin, requireManager, guestOnly } from '@/middleware/auth'
@@ -29,6 +31,20 @@ const routes = [
     name: 'unauthorized',
     component: UnauthorizedView,
     meta: { title: 'Không có quyền truy cập' },
+  },
+
+  // VNPay Callback routes (không cần đăng nhập)
+  {
+    path: '/checkout-success',
+    name: 'checkout-success',
+    component: CheckoutSuccessView,
+    meta: { title: 'Thanh toán thành công' },
+  },
+  {
+    path: '/checkout-failed',
+    name: 'checkout-failed',
+    component: CheckoutFailedView,
+    meta: { title: 'Thanh toán thất bại' },
   },
 
   // Admin routes (cần đăng nhập)
