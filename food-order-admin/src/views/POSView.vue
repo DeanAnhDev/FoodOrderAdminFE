@@ -117,7 +117,7 @@
                             <div v-if="!item.status || item.quantity <= 0"
                                 class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
                                 <span class="text-white font-bold text-sm">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
-                                }}</span>
+                                    }}</span>
                             </div>
 
                             <!-- Promotion badge -->
@@ -1355,7 +1355,7 @@ const handlePaymentConfirm = async (paymentData) => {
         }
     } catch (error) {
         console.error('Error processing order:', error)
-        
+
         // Handle API error response
         if (error.response && error.response.data) {
             const errorData = error.response.data
@@ -1366,7 +1366,7 @@ const handlePaymentConfirm = async (paymentData) => {
                 return
             }
         }
-        
+
         showErrorToast(error.message || 'Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.')
     } finally {
         processing.value = false
