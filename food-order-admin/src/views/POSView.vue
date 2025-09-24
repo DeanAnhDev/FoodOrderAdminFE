@@ -1,51 +1,83 @@
 <template>
     <div class="pos-container min-h-screen bg-white">
-        <!-- Header -->
+        <!-- Header with Order Management -->
         <div class="bg-white shadow-sm px-6 py-4 border-b">
-            <h1 class="text-2xl font-bold text-gray-800">Bán hàng tại quầy</h1>
-        </div>
-
-        <!-- Toolbar: Create new temporary order -->
-        <div class="bg-white border-b px-6 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <button @click="handleCreateTemporaryOrder" :disabled="creatingTemp"
-                    class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium px-4 py-2 rounded-lg transition-colors">
-                    <i v-if="!creatingTemp" class="fas fa-plus"></i>
-                    <i v-else class="fas fa-spinner fa-spin"></i>
-                    <span>Đơn mới</span>
-                </button>
-                <span v-if="currentCartId" class="text-sm text-gray-600">Đơn hiện tại: #{{ currentCartId }}</span>
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-gray-800">Bán hàng tại quầy</h1>
+                <div class="flex items-center gap-3">
+                    <button @click="loadTemporaryCarts" :disabled="loadingTempCarts"
+                        class="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
+                        <i v-if="!loadingTempCarts" class="fas fa-sync-alt"></i>
+                        <i v-else class="fas fa-spinner fa-spin"></i>
+                        <span>Làm mới</span>
+                    </button>
+                    <button @click="handleCreateTemporaryOrder" :disabled="creatingTemp"
+                        class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium px-4 py-2 rounded-lg transition-colors shadow-sm">
+                        <i v-if="!creatingTemp" class="fas fa-plus-circle"></i>
+                        <i v-else class="fas fa-spinner fa-spin"></i>
+                        <span>Tạo đơn mới</span>
+                    </button>
+                </div>
             </div>
-            <button @click="loadTemporaryCarts" :disabled="loadingTempCarts"
-                class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700">
-                <i v-if="!loadingTempCarts" class="fas fa-refresh"></i>
-                <i v-else class="fas fa-spinner fa-spin"></i>
-                <span>Làm mới</span>
-            </button>
         </div>
 
-        <!-- Temporary Orders List -->
-        <div v-if="temporaryCarts.length > 0" class="bg-gray-50 border-b px-6 py-3">
-            <h3 class="text-sm font-medium text-gray-700 mb-2">Đơn hàng chờ ({{ temporaryCarts.length }})</h3>
-            <div class="flex gap-2 flex-wrap">
-                <div v-for="tempCart in temporaryCarts" :key="tempCart.id || tempCart.cartId" class="relative group">
-                    <button @click="selectTemporaryCart(tempCart)" :class="[
-                        'px-3 py-2 rounded-lg text-sm font-medium transition-colors pr-8',
-                        (currentCartId === (tempCart.id || tempCart.cartId))
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                    ]">
-                        #{{ tempCart.id || tempCart.cartId }}
-                        <span class="ml-1 text-xs">({{ tempCart.cartItems?.length || 0 }} món)</span>
-                    </button>
-                    <button @click.stop="handleDeleteTemporaryCart(tempCart)" :class="[
-                        'absolute right-1 top-1/2 transform -translate-y-1/2 w-5 h-5 rounded-full text-xs hover:bg-red-500 hover:text-white transition-colors',
-                        (currentCartId === (tempCart.id || tempCart.cartId))
-                            ? 'text-white/70 hover:bg-red-600'
-                            : 'text-gray-400 hover:bg-red-500'
-                    ]">
-                        <i class="fas fa-times"></i>
-                    </button>
+        <!-- Current Order Status -->
+        <div class="bg-blue-50 border-b px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-shopping-cart text-blue-600"></i>
+                        <span class="font-medium text-blue-800">
+                            {{ currentCartId ? `Đơn hàng #${currentCartId}` : 'Chưa chọn đơn hàng' }}
+                        </span>
+                    </div>
+                    <div v-if="currentCartId && totalItems > 0" class="text-sm text-blue-600">
+                        {{ totalItems }} phần • {{ formatCurrency(subtotal) }}
+                    </div>
+                </div>
+                <div v-if="!currentCartId" class="text-sm text-blue-600">
+                    Tạo đơn mới hoặc chọn đơn có sẵn để bắt đầu
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Tab List -->
+        <div v-if="temporaryCarts.length > 0" class="bg-white border-b">
+            <div class="px-6 py-2">
+                <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                    <span class="text-sm font-medium text-gray-600 whitespace-nowrap mr-3">
+                        Đơn hàng chờ ({{ temporaryCarts.length }}):
+                    </span>
+                    <div class="flex gap-2">
+                        <div v-for="tempCart in temporaryCarts" :key="tempCart.id || tempCart.cartId"
+                            class="relative group flex-shrink-0">
+                            <button @click="selectTemporaryCart(tempCart)" :class="[
+                                'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border',
+                                (currentCartId === (tempCart.id || tempCart.cartId))
+                                    ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                            ]">
+                                <i class="fas fa-receipt text-xs"></i>
+                                <span>#{{ tempCart.id || tempCart.cartId }}</span>
+                                <span v-if="tempCart.cartItems?.length > 0" class="px-2 py-1 rounded-full text-xs"
+                                    :class="[
+                                        (currentCartId === (tempCart.id || tempCart.cartId))
+                                            ? 'bg-blue-400 text-white'
+                                            : 'bg-gray-100 text-gray-600'
+                                    ]">
+                                    {{ tempCart.cartItems.length }}
+                                </span>
+                                <button @click.stop="handleDeleteTemporaryCart(tempCart)" :class="[
+                                    'ml-1 w-4 h-4 rounded-full hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center',
+                                    (currentCartId === (tempCart.id || tempCart.cartId))
+                                        ? 'text-blue-200 hover:bg-red-600'
+                                        : 'text-gray-400'
+                                ]">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -79,7 +111,7 @@
                         <div v-if="!item.status || item.quantity <= 0"
                             class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
                             <span class="text-white font-bold text-lg">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
-                                }}</span>
+                            }}</span>
                         </div>
 
                         <!-- Promotion badge -->
@@ -137,15 +169,9 @@
                 class="w-full md:w-96 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col min-h-0 overflow-hidden">
                 <!-- Cart Header -->
                 <div class="p-6 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h2 class="text-xl font-bold text-gray-800">Đơn hàng</h2>
-                            <p class="text-sm text-gray-500">{{ totalItems }} món</p>
-                        </div>
-                        <button v-if="cartItems.length > 0" @click="clearCart"
-                            class="text-red-500 hover:text-red-700 text-sm">
-                            Xóa tất cả
-                        </button>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Đơn hàng</h2>
+                        <p v-if="totalItems > 0" class="text-sm text-gray-500">{{ totalItems }} phần</p>
                     </div>
                 </div>
 
@@ -783,6 +809,18 @@ onMounted(() => {
 .pos-container {
     height: calc(100vh - 60px);
     /* Adjust based on your navbar height */
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    /* Internet Explorer 10+ */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+    /* Safari and Chrome */
 }
 
 @media print {
