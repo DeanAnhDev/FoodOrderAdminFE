@@ -117,7 +117,7 @@
                             <div v-if="!item.status || item.quantity <= 0"
                                 class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
                                 <span class="text-white font-bold text-sm">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
-                                }}</span>
+                                    }}</span>
                             </div>
 
                             <!-- Promotion badge -->
@@ -1137,6 +1137,10 @@ const selectTemporaryCart = async (tempCart) => {
     try {
         currentCartId.value = cartId
         currentSelectedCart.value = tempCart // Lưu trữ thông tin đầy đủ về đơn hàng đang được chọn
+
+        // Reset selectedCustomer when switching carts - let currentSelectedCart handle customer info
+        selectedCustomer.value = null
+
         await syncCartFromBackend()
     } catch (error) {
         console.error('Error selecting temporary cart:', error)
@@ -1183,6 +1187,7 @@ const handleCreateTemporaryOrder = async () => {
         customerName.value = ''
         customerPaid.value = 0 // Reset số tiền khách trả
         paymentMethod.value = 0 // Default to cash
+        selectedCustomer.value = null // Reset selected customer for new cart
 
         // Reload temporary carts list to include the new one
         await loadTemporaryCarts()
@@ -1213,6 +1218,7 @@ const handleDeleteTemporaryCart = async (tempCart) => {
             customerName.value = ''
             customerPaid.value = 0 // Reset số tiền khách trả
             paymentMethod.value = 0 // Default to cash
+            selectedCustomer.value = null // Reset selected customer when deleting current cart
         }
 
         // Show success message
@@ -1456,6 +1462,16 @@ const selectWalkInCustomer = async () => {
 
                     // Reload temporary carts to get updated data
                     await loadTemporaryCarts()
+                    
+                    // Update currentSelectedCart with the latest data
+                    if (currentCartId.value) {
+                        const updatedCart = cartStore.temporaryCarts.find(cart => 
+                            (cart.id || cart.cartId) === currentCartId.value
+                        )
+                        if (updatedCart) {
+                            currentSelectedCart.value = updatedCart
+                        }
+                    }
                 } catch (assignError) {
                     console.error('Error assigning cart to walk-in customer:', assignError)
                     // Show error message from API response
@@ -1506,6 +1522,16 @@ const selectCustomer = async (customer) => {
 
                 // Reload temporary carts to get updated data with customer info
                 await loadTemporaryCarts()
+                
+                // Update currentSelectedCart with the latest data
+                if (currentCartId.value) {
+                    const updatedCart = cartStore.temporaryCarts.find(cart => 
+                        (cart.id || cart.cartId) === currentCartId.value
+                    )
+                    if (updatedCart) {
+                        currentSelectedCart.value = updatedCart
+                    }
+                }
             } catch (assignError) {
                 console.error('Error assigning cart to customer:', assignError)
                 // Show error message from API response
@@ -1608,6 +1634,16 @@ const createNewCustomer = async () => {
 
                     // Reload temporary carts to get updated data
                     await loadTemporaryCarts()
+                    
+                    // Update currentSelectedCart with the latest data
+                    if (currentCartId.value) {
+                        const updatedCart = cartStore.temporaryCarts.find(cart => 
+                            (cart.id || cart.cartId) === currentCartId.value
+                        )
+                        if (updatedCart) {
+                            currentSelectedCart.value = updatedCart
+                        }
+                    }
                 } catch (assignError) {
                     console.error('Error assigning cart to new customer:', assignError)
                     const errorMessage = assignError.response?.data?.message || 'Không thể gán giỏ hàng cho khách hàng mới'
