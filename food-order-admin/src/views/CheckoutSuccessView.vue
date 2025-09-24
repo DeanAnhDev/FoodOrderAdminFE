@@ -12,14 +12,6 @@
                 Đơn hàng của bạn đã được thanh toán thành công qua VNPay.
             </p>
 
-            <!-- Order Info -->
-            <div v-if="orderInfo" class="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm text-gray-600">Mã giao dịch:</span>
-                    <span class="font-medium">{{ orderInfo.transactionId || 'N/A' }}</span>
-                </div>
-            </div>
-
             <!-- Action Buttons -->
             <div class="flex flex-col gap-3">
                 <button @click="goToPOS"

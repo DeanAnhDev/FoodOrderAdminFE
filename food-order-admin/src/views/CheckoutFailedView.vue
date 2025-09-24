@@ -12,14 +12,6 @@
                 Giao dịch VNPay không thành công. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.
             </p>
 
-            <!-- Error Info -->
-            <div v-if="errorInfo" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-left">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm text-gray-600">Mã lỗi:</span>
-                    <span class="font-medium text-red-600">{{ errorInfo.responseCode || 'N/A' }}</span>
-                </div>
-            </div>
-
             <!-- Action Buttons -->
             <div class="flex flex-col gap-3">
                 <button @click="goToPOS"

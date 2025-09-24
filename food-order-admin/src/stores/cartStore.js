@@ -239,7 +239,7 @@ export const useCartStore = defineStore('cart', () => {
     loading.value = true
     error.value = null
     try {
-      await cartService.deleteTemporaryCart(cartId)
+      await cartService.deleteCartById(cartId)
       // Remove from local temporaryCarts array
       temporaryCarts.value = temporaryCarts.value.filter(
         (cart) => (cart.id || cart.cartId) !== cartId,
