@@ -117,7 +117,7 @@
                             <div v-if="!item.status || item.quantity <= 0"
                                 class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
                                 <span class="text-white font-bold text-sm">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
-                                    }}</span>
+                                }}</span>
                             </div>
 
                             <!-- Promotion badge -->
@@ -216,8 +216,12 @@
                                 </div>
                             </div>
                             <div class="flex items-center space-x-1 flex-shrink-0">
-                                <button @click="decreaseQuantity(item.id)"
-                                    class="w-7 h-7 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center">
+                                <button @click="decreaseQuantity(item.id)" :disabled="item.quantity <= 1" :class="[
+                                    'w-7 h-7 rounded-full flex items-center justify-center',
+                                    item.quantity <= 1
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                                ]">
                                     <i class="fas fa-minus text-xs"></i>
                                 </button>
                                 <span class="w-6 text-center font-medium text-sm">{{ item.quantity }}</span>
@@ -968,6 +972,18 @@ const addToCart = async (item) => {
         await syncCartFromBackend()
     } catch (error) {
         console.error('Error adding to cart:', error)
+
+        // Handle API error response
+        if (error.response && error.response.data) {
+            const errorData = error.response.data
+            if (!errorData.success && errorData.message) {
+                showWarningToast(errorData.message)
+                // Sync cart to get updated quantities from backend
+                await syncCartFromBackend()
+                return
+            }
+        }
+
         showErrorToast('Có lỗi khi thêm sản phẩm vào giỏ hàng')
     }
 }
@@ -1013,7 +1029,19 @@ const increaseQuantity = async (itemId) => {
         await syncCartFromBackend()
     } catch (error) {
         console.error('Error updating quantity:', error)
-        alert('Có lỗi khi cập nhật số lượng')
+
+        // Handle API error response
+        if (error.response && error.response.data) {
+            const errorData = error.response.data
+            if (!errorData.success && errorData.message) {
+                showWarningToast(errorData.message)
+                // Sync cart to get updated quantities from backend
+                await syncCartFromBackend()
+                return
+            }
+        }
+
+        showErrorToast('Có lỗi khi cập nhật số lượng')
     }
 }
 
@@ -1039,7 +1067,19 @@ const decreaseQuantity = async (itemId) => {
         await syncCartFromBackend()
     } catch (error) {
         console.error('Error updating quantity:', error)
-        alert('Có lỗi khi cập nhật số lượng')
+
+        // Handle API error response
+        if (error.response && error.response.data) {
+            const errorData = error.response.data
+            if (!errorData.success && errorData.message) {
+                showWarningToast(errorData.message)
+                // Sync cart to get updated quantities from backend
+                await syncCartFromBackend()
+                return
+            }
+        }
+
+        showErrorToast('Có lỗi khi cập nhật số lượng')
     }
 }
 
