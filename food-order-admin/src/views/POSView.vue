@@ -1,9 +1,9 @@
 <template>
-    <div class="pos-container min-h-screen bg-white">
+    <div class="pos-container h-screen bg-white flex flex-col">
         <!-- Header with Order Management -->
-        <div class="bg-white shadow-sm px-6 py-4 border-b">
+        <div class="bg-white shadow-sm px-6 py-3 border-b flex-shrink-0">
             <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-bold text-gray-800">Bán hàng tại quầy</h1>
+                <h1 class="text-xl font-bold text-gray-800">Bán hàng tại quầy</h1>
                 <div class="flex items-center gap-3">
                     <button @click="loadTemporaryCarts" :disabled="loadingTempCarts"
                         class="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
@@ -22,7 +22,7 @@
         </div>
 
         <!-- Current Order Status -->
-        <div class="bg-blue-50 border-b px-6 py-3">
+        <div class="bg-blue-50 border-b px-6 py-2 flex-shrink-0">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2">
@@ -42,7 +42,7 @@
         </div>
 
         <!-- Orders Tab List -->
-        <div v-if="temporaryCarts.length > 0" class="bg-white border-b">
+        <div v-if="temporaryCarts.length > 0" class="bg-white border-b flex-shrink-0">
             <div class="px-6 py-2">
                 <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide">
                     <span class="text-sm font-medium text-gray-600 whitespace-nowrap mr-3">
@@ -52,14 +52,14 @@
                         <div v-for="tempCart in temporaryCarts" :key="tempCart.id || tempCart.cartId"
                             class="relative group flex-shrink-0">
                             <button @click="selectTemporaryCart(tempCart)" :class="[
-                                'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border',
+                                'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border',
                                 (currentCartId === (tempCart.id || tempCart.cartId))
                                     ? 'bg-blue-500 text-white border-blue-500 shadow-md'
                                     : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                             ]">
                                 <i class="fas fa-receipt text-xs"></i>
                                 <span>#{{ tempCart.id || tempCart.cartId }}</span>
-                                <span v-if="tempCart.cartItems?.length > 0" class="px-2 py-1 rounded-full text-xs"
+                                <span v-if="tempCart.cartItems?.length > 0" class="px-1.5 py-0.5 rounded-full text-xs"
                                     :class="[
                                         (currentCartId === (tempCart.id || tempCart.cartId))
                                             ? 'bg-blue-400 text-white'
@@ -82,11 +82,11 @@
             </div>
         </div>
 
-        <div class="flex h-full min-h-0 overflow-hidden">
+        <div class="flex flex-1 min-h-0 overflow-hidden">
             <!-- Left Panel - Product Selection -->
-            <div class="flex-1 min-w-0 min-h-0 p-6 overflow-y-auto">
-                <!-- Search -->
-                <div class="mb-6">
+            <div class="flex-1 min-w-0 flex flex-col">
+                <!-- Search - Fixed at top -->
+                <div class="p-4 border-b bg-white flex-shrink-0">
                     <div class="relative">
                         <input v-model="searchQuery" type="text" placeholder="Tìm kiếm món ăn, combo..."
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
@@ -101,97 +101,100 @@
                     </div>
                 </div>
 
-                <!-- Product Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-w-0">
-                    <div v-for="item in filteredItems" :key="item.id" @click="addToCart(item)" :class="[
-                        'bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow relative',
-                        !item.status || item.quantity <= 0 ? 'opacity-60' : ''
-                    ]">
-                        <!-- Out of stock overlay -->
-                        <div v-if="!item.status || item.quantity <= 0"
-                            class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
-                            <span class="text-white font-bold text-lg">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
-                            }}</span>
-                        </div>
-
-                        <!-- Promotion badge -->
-                        <div v-if="item.promotion && item.promotion.isActive"
-                            class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full z-20">
-                            {{ item.promotion.type === 'Percentage' ? '-' + item.promotion.discountAmount + '%' : '-' +
-                                formatCurrency(item.promotion.discountAmount) }}
-                        </div>
-
-                        <div
-                            class="aspect-square bg-white rounded-lg mb-3 overflow-hidden flex items-center justify-center">
-                            <img v-if="item.image" :src="item.image" :alt="item.name"
-                                class="w-full h-full object-cover" />
-                            <div v-else class="text-gray-400">
-                                <i class="fas fa-utensils text-4xl"></i>
+                <!-- Product Grid - Scrollable -->
+                <div class="flex-1 overflow-y-auto p-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div v-for="item in filteredItems" :key="item.id" @click="addToCart(item)" :class="[
+                            'bg-white rounded-lg shadow-sm border border-gray-200 p-3 cursor-pointer hover:shadow-md transition-shadow relative',
+                            !item.status || item.quantity <= 0 ? 'opacity-60' : ''
+                        ]">
+                            <!-- Out of stock overlay -->
+                            <div v-if="!item.status || item.quantity <= 0"
+                                class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
+                                <span class="text-white font-bold text-sm">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
+                                    }}</span>
                             </div>
-                        </div>
-                        <h3 class="font-medium text-gray-900 mb-1 line-clamp-2">{{ item.name }}</h3>
-                        <p class="text-sm text-gray-600 mb-2 line-clamp-2">{{ item.description }}</p>
-                        <div class="text-xs text-gray-500 mb-2">
-                            Còn lại: {{ item.quantity }}
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <div class="flex flex-col">
-                                <!-- Original price (crossed out if there's promotion) -->
-                                <span v-if="item.promotion && item.promotion.isActive"
-                                    class="text-sm text-gray-500 line-through">
-                                    {{ formatCurrency(item.price) }}
-                                </span>
-                                <!-- Final price -->
-                                <span class="text-lg font-bold text-blue-600">
-                                    {{ formatCurrency(getFinalPrice(item)) }}
-                                </span>
+
+                            <!-- Promotion badge -->
+                            <div v-if="item.promotion && item.promotion.isActive"
+                                class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full z-20">
+                                {{ item.promotion.type === 'Percentage' ? '-' + item.promotion.discountAmount + '%' :
+                                    '-' +
+                                    formatCurrency(item.promotion.discountAmount) }}
                             </div>
-                            <button :disabled="!item.status || item.quantity <= 0" :class="[
-                                'p-2 rounded-lg transition-colors',
-                                (!item.status || item.quantity <= 0)
-                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                            ]">
-                                <i class="fas fa-plus"></i>
-                            </button>
+
+                            <div
+                                class="aspect-square bg-gray-50 rounded-lg mb-2 overflow-hidden flex items-center justify-center">
+                                <img v-if="item.image" :src="item.image" :alt="item.name"
+                                    class="w-full h-full object-cover" />
+                                <div v-else class="text-gray-400">
+                                    <i class="fas fa-utensils text-3xl"></i>
+                                </div>
+                            </div>
+                            <h3 class="font-medium text-gray-900 mb-1 text-sm line-clamp-2">{{ item.name }}</h3>
+                            <p class="text-xs text-gray-600 mb-2 line-clamp-2">{{ item.description }}</p>
+                            <div class="text-xs text-gray-500 mb-2">
+                                Còn: {{ item.quantity }}
+                            </div>
+                            <div class="flex justify-between items-end">
+                                <div class="flex flex-col">
+                                    <!-- Original price (crossed out if there's promotion) -->
+                                    <span v-if="item.promotion && item.promotion.isActive"
+                                        class="text-xs text-gray-500 line-through">
+                                        {{ formatCurrency(item.price) }}
+                                    </span>
+                                    <!-- Final price -->
+                                    <span class="text-sm font-bold text-blue-600">
+                                        {{ formatCurrency(getFinalPrice(item)) }}
+                                    </span>
+                                </div>
+                                <button :disabled="!item.status || item.quantity <= 0" :class="[
+                                    'p-2 rounded-lg transition-colors',
+                                    (!item.status || item.quantity <= 0)
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                                ]">
+                                    <i class="fas fa-plus text-xs"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Load more or pagination if needed -->
-                <div v-if="loading" class="text-center py-8">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <!-- Load more or pagination if needed -->
+                    <div v-if="loading" class="text-center py-4">
+                        <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                    </div>
                 </div>
             </div>
 
             <!-- Right Panel - Cart & Checkout -->
-            <div
-                class="w-full md:w-96 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col min-h-0 overflow-hidden">
+            <div class="w-80 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col">
                 <!-- Cart Header -->
-                <div class="p-6 border-b border-gray-200">
+                <div class="p-4 border-b border-gray-200 flex-shrink-0">
                     <div>
-                        <h2 class="text-xl font-bold text-gray-800">Đơn hàng</h2>
+                        <h2 class="text-lg font-bold text-gray-800">Đơn hàng</h2>
                         <p v-if="totalItems > 0" class="text-sm text-gray-500">{{ totalItems }} phần</p>
                     </div>
                 </div>
 
                 <!-- Cart Items -->
-                <div class="flex-1 overflow-y-auto p-6">
+                <div class="flex-1 overflow-y-auto p-4">
                     <div v-if="cartItems.length === 0" class="text-center text-gray-500 py-8">
-                        <i class="fas fa-shopping-cart text-4xl mb-4 text-gray-300"></i>
-                        <p>Chưa có món nào trong đơn hàng</p>
+                        <i class="fas fa-shopping-cart text-3xl mb-3 text-gray-300"></i>
+                        <p class="text-sm">Chưa có món nào trong đơn hàng</p>
                     </div>
 
-                    <div v-else class="space-y-4">
-                        <div v-for="item in cartItems" :key="item.id" class="flex items-center bg-white rounded-lg p-3">
+                    <div v-else class="space-y-3">
+                        <div v-for="item in cartItems" :key="item.id"
+                            class="flex items-center bg-gray-50 rounded-lg p-3">
                             <div
-                                class="w-12 h-12 bg-white rounded-lg mr-3 flex items-center justify-center overflow-hidden">
+                                class="w-10 h-10 bg-white rounded-lg mr-3 flex items-center justify-center overflow-hidden flex-shrink-0">
                                 <img v-if="item.image" :src="item.image" :alt="item.name"
                                     class="w-full h-full object-cover" />
-                                <i v-else class="fas fa-utensils text-gray-400"></i>
+                                <i v-else class="fas fa-utensils text-gray-400 text-sm"></i>
                             </div>
-                            <div class="flex-1">
-                                <h4 class="font-medium text-gray-900 text-sm">{{ item.name }}</h4>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-medium text-gray-900 text-sm truncate">{{ item.name }}</h4>
                                 <div class="flex flex-col">
                                     <!-- Original price (crossed out if there's discount) -->
                                     <span v-if="item.discountAmount > 0" class="text-xs text-gray-500 line-through">
@@ -207,18 +210,18 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-center space-x-1 flex-shrink-0">
                                 <button @click="decreaseQuantity(item.id)"
-                                    class="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center">
+                                    class="w-7 h-7 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center">
                                     <i class="fas fa-minus text-xs"></i>
                                 </button>
-                                <span class="w-8 text-center font-medium">{{ item.quantity }}</span>
+                                <span class="w-6 text-center font-medium text-sm">{{ item.quantity }}</span>
                                 <button @click="increaseQuantity(item.id)"
-                                    class="w-8 h-8 rounded-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center">
+                                    class="w-7 h-7 rounded-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center">
                                     <i class="fas fa-plus text-xs"></i>
                                 </button>
                                 <button @click="removeFromCart(item.id)"
-                                    class="w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center ml-2">
+                                    class="w-7 h-7 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center ml-1">
                                     <i class="fas fa-trash text-xs"></i>
                                 </button>
                             </div>
@@ -227,9 +230,9 @@
                 </div>
 
                 <!-- Order Summary & Checkout -->
-                <div v-if="cartItems.length > 0" class="border-t border-gray-200 p-6">
+                <div v-if="cartItems.length > 0" class="border-t border-gray-200 p-4 flex-shrink-0">
                     <!-- Order Summary -->
-                    <div class="space-y-2 mb-4">
+                    <div class="space-y-1 mb-4">
                         <!-- Original total (if there are discounts) -->
                         <div v-if="cartStore.originalTotal > cartStore.subtotal"
                             class="flex justify-between text-sm text-gray-500">
@@ -252,12 +255,12 @@
                     <!-- Checkout Buttons -->
                     <div class="space-y-2">
                         <button @click="showPaymentModal = true" :disabled="processing"
-                            class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-3 rounded-lg transition-colors">
+                            class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-2.5 rounded-lg transition-colors">
                             <i class="fas fa-credit-card mr-2"></i>
                             Thanh toán
                         </button>
                         <button @click="saveOrder"
-                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition-colors">
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-lg transition-colors">
                             <i class="fas fa-save mr-2"></i>
                             Lưu đơn hàng
                         </button>
@@ -807,8 +810,8 @@ onMounted(() => {
 }
 
 .pos-container {
-    height: calc(100vh - 60px);
-    /* Adjust based on your navbar height */
+    height: 100vh;
+    /* Full viewport height */
 }
 
 .scrollbar-hide {
