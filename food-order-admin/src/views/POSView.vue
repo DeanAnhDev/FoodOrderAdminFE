@@ -117,7 +117,7 @@
                             <div v-if="!item.status || item.quantity <= 0"
                                 class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
                                 <span class="text-white font-bold text-sm">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
-                                    }}</span>
+                                }}</span>
                             </div>
 
                             <!-- Promotion badge -->
@@ -269,11 +269,34 @@
 
                     <!-- Customer Selection -->
                     <div class="mb-3">
-                        <button @click="showCustomerModal = true"
-                            class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition-colors border border-gray-300">
-                            <i class="fas fa-user mr-2"></i>
-                            {{ selectedCustomer ? selectedCustomer.name : 'Chọn khách hàng' }}
-                        </button>
+                        <div v-if="currentSelectedCart?.userId || selectedCustomer?.id"
+                            class="bg-green-50 border border-green-200 rounded-lg p-3 mb-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-user-check text-green-600 mr-2"></i>
+                                    <div class="font-medium text-green-800">
+                                        {{ currentSelectedCart?.customerName || selectedCustomer?.name || 'Khách hàng'
+                                        }}
+                                    </div>
+                                </div>
+                                <button @click="showCustomerModal = true"
+                                    class="text-green-600 hover:text-green-800 transition-colors">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div v-else class="bg-red-50 border border-red-200 rounded-lg p-3 mb-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-user-times text-red-600 mr-2"></i>
+                                    <div class="text-red-800 font-medium">Chưa chọn khách hàng</div>
+                                </div>
+                                <button @click="showCustomerModal = true"
+                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                    Chọn
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Voucher Selection -->
@@ -316,25 +339,39 @@
                         </div>
                     </div>
 
+                    <!-- Customer Payment Input for Cash -->
+                    <div v-if="paymentMethod === 0" class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Số tiền khách trả</label>
+                        <input v-model="customerPaid" type="number" min="0" step="1000"
+                            placeholder="Nhập số tiền khách trả..."
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        <div v-if="customerPaid && customerPaid >= total" class="mt-1 text-sm text-green-600">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            Tiền thối: {{ formatCurrency(customerPaid - total) }}
+                        </div>
+                        <div v-else-if="customerPaid && customerPaid < total" class="mt-1 text-sm text-red-600">
+                            <i class="fas fa-exclamation-circle mr-1"></i>
+                            Thiếu: {{ formatCurrency(total - customerPaid) }}
+                        </div>
+                    </div>
+
                     <!-- Payment Button -->
-                    <button @click="showPaymentModal = true" :disabled="processing"
-                        class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-3 rounded-lg transition-colors">
-                        <i class="fas fa-credit-card mr-2"></i>
-                        Thanh toán
+                    <button @click="handleDirectPayment" :disabled="processing || !canProcessPayment" :class="[
+                        'w-full font-bold py-3 rounded-lg transition-colors',
+                        canProcessPayment && !processing
+                            ? 'bg-green-500 hover:bg-green-600 text-white'
+                            : 'bg-gray-400 text-white cursor-not-allowed'
+                    ]">
+                        <i v-if="processing" class="fas fa-spinner fa-spin mr-2"></i>
+                        <i v-else class="fas fa-credit-card mr-2"></i>
+                        <span v-if="processing">Đang xử lý...</span>
+                        <span v-else>{{ paymentValidationMessage }}</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Payment Modal -->
-        <div v-if="showPaymentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            @click="showPaymentModal = false">
-            <div class="bg-white rounded-lg max-w-2xl w-full mx-4" @click.stop>
-                <PaymentModal :order-total="total" :initial-payment-method="paymentMethod"
-                    :initial-customer-name="customerName" @close="showPaymentModal = false"
-                    @confirm="handlePaymentConfirm" />
-            </div>
-        </div>
+
 
         <!-- Success Modal -->
         <div v-if="showSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
@@ -604,7 +641,6 @@ import { useCartStore } from '@/stores/cartStore'
 import { useCustomerStore } from '@/stores/userStore'
 import { useVoucherStore } from '@/stores/voucherStore'
 import ReceiptModal from '@/components/ReceiptModal.vue'
-import PaymentModal from '@/components/PaymentModal.vue'
 
 const router = useRouter()
 const foodStore = useFoodStore()
@@ -623,9 +659,9 @@ const isSearching = ref(false)
 const cartItems = ref([])
 const customerName = ref('')
 const paymentMethod = ref(0) // 0 = Cash, 1 = VNPay
+const customerPaid = ref(0) // Số tiền khách trả
 const showSuccessModal = ref(false)
 const showReceiptModal = ref(false)
-const showPaymentModal = ref(false)
 const showCustomerModal = ref(false)
 const showAddCustomerForm = ref(false)
 const showVoucherModal = ref(false)
@@ -634,6 +670,7 @@ const loadingVouchers = ref(false)
 const lastOrderId = ref('')
 const lastCompletedOrder = ref(null)
 const currentCartId = ref(null)
+const currentSelectedCart = ref(null) // Lưu trữ thông tin đầy đủ về đơn hàng đang được chọn
 const creatingTemp = ref(false)
 const loadingTempCarts = ref(false)
 const temporaryCarts = computed(() => cartStore.temporaryCarts)
@@ -745,6 +782,49 @@ const total = computed(() => {
 
 const totalItems = computed(() => {
     return cartItems.value.reduce((sum, item) => sum + item.quantity, 0)
+})
+
+const canProcessPayment = computed(() => {
+    // Nếu không có sản phẩm trong giỏ hàng
+    if (cartItems.value.length === 0) return false
+
+    // Kiểm tra phải có thông tin khách hàng (userId từ đơn hàng đang chọn hoặc selectedCustomer)
+    const hasCustomerInfo = currentSelectedCart.value?.userId || selectedCustomer.value?.id
+    if (!hasCustomerInfo) return false
+
+    // Nếu chọn VNPay (1), có thể thanh toán
+    if (paymentMethod.value === 1) return true
+
+    // Nếu chọn tiền mặt (0), phải nhập số tiền khách trả và phải >= tổng tiền
+    if (paymentMethod.value === 0) {
+        return customerPaid.value && customerPaid.value >= total.value
+    }
+
+    return false
+})
+
+const paymentValidationMessage = computed(() => {
+    if (cartItems.value.length === 0) {
+        return 'Giỏ hàng trống'
+    }
+
+    // Kiểm tra thông tin khách hàng
+    const hasCustomerInfo = currentSelectedCart.value?.userId || selectedCustomer.value?.id
+    if (!hasCustomerInfo) {
+        return 'Vui lòng chọn khách hàng'
+    }
+
+    // Kiểm tra phương thức thanh toán tiền mặt
+    if (paymentMethod.value === 0) {
+        if (!customerPaid.value) {
+            return 'Nhập số tiền khách trả'
+        }
+        if (customerPaid.value < total.value) {
+            return 'Số tiền không đủ'
+        }
+    }
+
+    return 'Thanh toán'
 })
 
 // Helper functions
@@ -959,12 +1039,13 @@ const decreaseQuantity = async (itemId) => {
 const clearCart = () => {
     cartItems.value = []
     customerName.value = ''
+    customerPaid.value = 0 // Reset số tiền khách trả
+    currentSelectedCart.value = null // Xóa thông tin đôn hàng đang được chọn
     // Keep selectedCustomer so the name stays on the button
     // selectedCustomer.value = null
     selectedVoucher.value = null
     showSuccessModal.value = false
     showReceiptModal.value = false
-    showPaymentModal.value = false
     showCustomerModal.value = false
     showAddCustomerForm.value = false
     showVoucherModal.value = false
@@ -1008,6 +1089,7 @@ const selectTemporaryCart = async (tempCart) => {
 
     try {
         currentCartId.value = cartId
+        currentSelectedCart.value = tempCart // Lưu trữ thông tin đầy đủ về đơn hàng đang được chọn
         await syncCartFromBackend()
     } catch (error) {
         console.error('Error selecting temporary cart:', error)
@@ -1048,9 +1130,11 @@ const handleCreateTemporaryOrder = async () => {
     try {
         const cart = await cartStore.createTemporaryCart()
         currentCartId.value = cart?.id || cart?.cartId || null
+        currentSelectedCart.value = null // Xóa thông tin đơn hàng đang được chọn
         // Start fresh for the new temporary order
         cartItems.value = []
         customerName.value = ''
+        customerPaid.value = 0 // Reset số tiền khách trả
         paymentMethod.value = 0 // Default to cash
 
         // Reload temporary carts list to include the new one
@@ -1077,8 +1161,10 @@ const handleDeleteTemporaryCart = async (tempCart) => {
         // If we deleted the currently selected cart, clear the selection
         if (currentCartId.value === cartId) {
             currentCartId.value = null
+            currentSelectedCart.value = null // Xóa thông tin đơn hàng đang được chọn
             cartItems.value = []
             customerName.value = ''
+            customerPaid.value = 0 // Reset số tiền khách trả
             paymentMethod.value = 0 // Default to cash
         }
 
@@ -1091,8 +1177,56 @@ const handleDeleteTemporaryCart = async (tempCart) => {
     }
 }
 
+const handleDirectPayment = async () => {
+    // Kiểm tra giỏ hàng trống
+    if (cartItems.value.length === 0) {
+        showErrorToast('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi thanh toán.')
+        return
+    }
+
+    if (!currentCartId.value) {
+        showErrorToast('Không tìm thấy ID giỏ hàng. Vui lòng thử lại.')
+        return
+    }
+
+    // Kiểm tra thông tin khách hàng
+    const hasCustomerInfo = currentSelectedCart.value?.userId || selectedCustomer.value?.id
+    if (!hasCustomerInfo) {
+        showErrorToast('Vui lòng chọn khách hàng trước khi thanh toán.')
+        return
+    }
+
+    // Validate payment for cash method
+    if (paymentMethod.value === 0) {
+        if (!customerPaid.value) {
+            showErrorToast('Vui lòng nhập số tiền khách trả.')
+            return
+        }
+        if (customerPaid.value < total.value) {
+            showErrorToast('Số tiền khách trả không đủ để thanh toán.')
+            return
+        }
+    }
+
+    // Create payment data with current values
+    const paymentData = {
+        customerName: currentSelectedCart.value?.customerName || selectedCustomer.value?.name || customerName.value || 'Khách hàng tại quầy',
+        paymentMethod: paymentMethod.value,
+        customerPaid: paymentMethod.value === 0 ? customerPaid.value : total.value, // Sử dụng số tiền khách trả cho tiền mặt
+        change: paymentMethod.value === 0 ? (customerPaid.value - total.value) : 0 // Tính tiền thối cho tiền mặt
+    }
+
+    // Call the existing payment confirm function
+    await handlePaymentConfirm(paymentData)
+}
+
 const handlePaymentConfirm = async (paymentData) => {
     if (cartItems.value.length === 0) return
+
+    if (!currentCartId.value) {
+        showErrorToast('Không tìm thấy ID giỏ hàng. Vui lòng thử lại.')
+        return
+    }
 
     processing.value = true
     try {
@@ -1100,18 +1234,27 @@ const handlePaymentConfirm = async (paymentData) => {
         customerName.value = paymentData.customerName
         paymentMethod.value = paymentData.paymentMethod
 
+        // Prepare order data according to CreateOrderDto
         const orderData = {
-            customerName: selectedCustomer.value?.name || paymentData.customerName || 'Khách hàng tại quầy',
+            cartId: currentCartId.value,
+            userId: currentSelectedCart.value?.userId || selectedCustomer.value?.id || null,
+            paymentMethod: paymentData.paymentMethod, // 0 = Cash, 1 = VNPay
+            voucherId: selectedVoucher.value?.voucherId || null
+        }
+
+        // Store additional data for local use (receipt, etc.)
+        const localOrderData = {
+            customerName: currentSelectedCart.value?.customerName || selectedCustomer.value?.name || paymentData.customerName || 'Khách hàng tại quầy',
             paymentMethod: paymentData.paymentMethod,
             customerPaid: paymentData.customerPaid,
             change: paymentData.change,
-            customer: selectedCustomer.value,
+            customer: currentSelectedCart.value?.userId ? { id: currentSelectedCart.value.userId, name: currentSelectedCart.value.customerName } : selectedCustomer.value,
             voucher: selectedVoucher.value,
             voucherDiscount: voucherDiscount.value,
             items: cartItems.value.map(item => ({
                 id: item.id,
                 name: item.name,
-                price: item.finalPrice || item.price, // Use final price after promotion
+                price: item.finalPrice || item.price,
                 originalPrice: item.originalPrice,
                 finalPrice: item.finalPrice,
                 discountAmount: item.discountAmount,
@@ -1128,21 +1271,28 @@ const handlePaymentConfirm = async (paymentData) => {
         if (result.success) {
             lastOrderId.value = result.order?.id || Date.now().toString()
             lastCompletedOrder.value = {
-                ...orderData,
+                ...localOrderData,
                 id: lastOrderId.value,
                 createdAt: new Date()
             }
 
-            // Close payment modal and clear cart
-            showPaymentModal.value = false
+            // Handle VNPay payment URL if available
+            if (result.paymentUrl && paymentData.paymentMethod === 1) {
+                // Open VNPay payment URL in new window
+                window.open(result.paymentUrl, '_blank')
+                showInfoToast('Đã mở cửa sổ thanh toán VNPay')
+            }
+
+            // Clear cart and show success
             clearCart()
             showSuccessModal.value = true
+            showSuccessToast(result.message || 'Đặt hàng thành công!')
         } else {
             throw new Error(result.message || 'Tạo đơn hàng thất bại')
         }
     } catch (error) {
         console.error('Error processing order:', error)
-        alert('Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.')
+        showErrorToast(error.message || 'Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.')
     } finally {
         processing.value = false
     }
@@ -1151,27 +1301,18 @@ const handlePaymentConfirm = async (paymentData) => {
 const saveOrder = async () => {
     if (cartItems.value.length === 0) return
 
+    if (!currentCartId.value) {
+        showErrorToast('Không tìm thấy ID giỏ hàng. Vui lòng thử lại.')
+        return
+    }
+
     try {
+        // Prepare order data according to CreateOrderDto
         const orderData = {
-            customerName: selectedCustomer.value?.name || customerName.value || 'Khách hàng tại quầy',
-            paymentMethod: paymentMethod.value,
-            customer: selectedCustomer.value,
-            voucher: selectedVoucher.value,
-            voucherDiscount: voucherDiscount.value,
-            items: cartItems.value.map(item => ({
-                id: item.id,
-                name: item.name,
-                price: item.finalPrice || item.price, // Use final price after promotion
-                originalPrice: item.originalPrice,
-                finalPrice: item.finalPrice,
-                discountAmount: item.discountAmount,
-                quantity: item.quantity,
-                type: item.type
-            })),
-            subtotal: subtotal.value,
-            total: total.value,
-            orderType: 'pos',
-            status: 'pending'
+            cartId: currentCartId.value,
+            userId: selectedCustomer.value?.id || null,
+            paymentMethod: paymentMethod.value, // 0 = Cash, 1 = VNPay
+            voucherId: selectedVoucher.value?.voucherId || null
         }
 
         const result = await orderStore.submitOrder(orderData)
@@ -1414,6 +1555,13 @@ watch(searchQuery, (newQuery) => {
 watch(subtotal, (newSubtotal) => {
     if (selectedVoucher.value && newSubtotal < (selectedVoucher.value.minOrderPrice || 0)) {
         showWarningToast(`Voucher yêu cầu đơn hàng tối thiểu ${formatCurrency(selectedVoucher.value.minOrderPrice)}`)
+    }
+})
+
+// Watch payment method changes to reset customerPaid when switching to VNPay
+watch(paymentMethod, (newMethod) => {
+    if (newMethod === 1) { // VNPay selected
+        customerPaid.value = 0 // Reset customer paid amount for VNPay
     }
 })
 
