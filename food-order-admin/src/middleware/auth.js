@@ -48,6 +48,7 @@ export const requireRole = (roles = []) => {
 
 export const requireAdmin = requireRole(['Admin'])
 export const requireManager = requireRole(['Admin', 'Manager'])
+export const requireStaff = requireRole(['Admin', 'Manager', 'Staff'])
 
 export const guestOnly = (to, from, next) => {
   const authStore = useAuthStore()

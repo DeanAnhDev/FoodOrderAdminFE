@@ -17,6 +17,7 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAdmin: (state) => state.roles.includes('Admin'),
     isManager: (state) => state.roles.includes('Manager'),
+    isStaff: (state) => state.roles.includes('Staff'),
     hasRole: (state) => (role) => state.roles.includes(role),
   },
 

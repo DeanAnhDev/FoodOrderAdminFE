@@ -15,7 +15,13 @@ import CheckoutSuccessView from '@/views/CheckoutSuccessView.vue'
 import CheckoutFailedView from '@/views/CheckoutFailedView.vue'
 import LoginView from '@/views/LoginView.vue'
 import UnauthorizedView from '@/views/UnauthorizedView.vue'
-import { requireAuth, requireAdmin, requireManager, guestOnly } from '@/middleware/auth'
+import {
+  requireAuth,
+  requireAdmin,
+  requireManager,
+  requireStaff,
+  guestOnly,
+} from '@/middleware/auth'
 
 const routes = [
   // Auth routes (không cần đăng nhập)
@@ -67,22 +73,26 @@ const routes = [
         path: 'pos',
         name: 'pos',
         component: POSView,
-        beforeEnter: requireAuth,
-        meta: { title: 'Bán hàng tại quầy', requiresAuth: true },
+        beforeEnter: requireStaff,
+        meta: {
+          title: 'Bán hàng tại quầy',
+          requiresAuth: true,
+          roles: ['Admin', 'Manager', 'Staff'],
+        },
       },
       {
         path: 'combo',
         name: 'combo',
         component: ComboManagementView,
-        beforeEnter: requireManager,
-        meta: { title: 'Quản lý Combo', requiresAuth: true, roles: ['Admin', 'Manager'] },
+        beforeEnter: requireStaff,
+        meta: { title: 'Quản lý Combo', requiresAuth: true, roles: ['Admin', 'Manager', 'Staff'] },
       },
       {
         path: 'food',
         name: 'food',
         component: FoodManagementView,
-        beforeEnter: requireManager,
-        meta: { title: 'Quản lý Món ăn', requiresAuth: true, roles: ['Admin', 'Manager'] },
+        beforeEnter: requireStaff,
+        meta: { title: 'Quản lý Món ăn', requiresAuth: true, roles: ['Admin', 'Manager', 'Staff'] },
       },
       {
         path: 'category',
@@ -123,8 +133,12 @@ const routes = [
         path: 'billmanagement',
         name: 'billmanagement',
         component: BillManagementView,
-        beforeEnter: requireManager,
-        meta: { title: 'Quản lý Đơn hàng', requiresAuth: true, roles: ['Admin', 'Manager'] },
+        beforeEnter: requireStaff,
+        meta: {
+          title: 'Quản lý Đơn hàng',
+          requiresAuth: true,
+          roles: ['Admin', 'Manager', 'Staff'],
+        },
       },
       {
         path: 'revenue',
