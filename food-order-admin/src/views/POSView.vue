@@ -58,7 +58,12 @@
                                     : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                             ]">
                                 <i class="fas fa-receipt text-xs"></i>
-                                <span>#{{ tempCart.id || tempCart.cartId }}</span>
+                                <div class="flex flex-col items-start">
+                                    <span>#{{ tempCart.id || tempCart.cartId }}</span>
+                                    <span v-if="tempCart.userId && tempCart.customerName" class="text-xs opacity-75">
+                                        {{ tempCart.customerName }}
+                                    </span>
+                                </div>
                                 <span v-if="tempCart.cartItems?.length > 0" class="px-1.5 py-0.5 rounded-full text-xs"
                                     :class="[
                                         (currentCartId === (tempCart.id || tempCart.cartId))
@@ -244,6 +249,16 @@
                             <span>Tổng giảm giá:</span>
                             <span>-{{ formatCurrency(cartStore.totalDiscount || 0) }}</span>
                         </div>
+                        <!-- Voucher discount -->
+                        <div v-if="voucherDiscount > 0" class="flex justify-between text-sm text-green-600">
+                            <span>Giảm giá voucher:</span>
+                            <span>-{{ formatCurrency(voucherDiscount) }}</span>
+                        </div>
+                        <!-- Subtotal before voucher discount -->
+                        <div v-if="voucherDiscount > 0" class="flex justify-between text-sm text-gray-600">
+                            <span>Tạm tính:</span>
+                            <span>{{ formatCurrency(subtotal) }}</span>
+                        </div>
                         <div class="border-t pt-2">
                             <div class="flex justify-between font-bold text-lg">
                                 <span>Tổng cộng:</span>
@@ -252,19 +267,61 @@
                         </div>
                     </div>
 
-                    <!-- Checkout Buttons -->
-                    <div class="space-y-2">
-                        <button @click="showPaymentModal = true" :disabled="processing"
-                            class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-2.5 rounded-lg transition-colors">
-                            <i class="fas fa-credit-card mr-2"></i>
-                            Thanh toán
-                        </button>
-                        <button @click="saveOrder"
-                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-lg transition-colors">
-                            <i class="fas fa-save mr-2"></i>
-                            Lưu đơn hàng
+                    <!-- Customer Selection -->
+                    <div class="mb-3">
+                        <button @click="showCustomerModal = true"
+                            class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition-colors border border-gray-300">
+                            <i class="fas fa-user mr-2"></i>
+                            {{ selectedCustomer ? selectedCustomer.name : 'Chọn khách hàng' }}
                         </button>
                     </div>
+
+                    <!-- Voucher Selection -->
+                    <div class="mb-3">
+                        <button @click="openVoucherModal"
+                            class="w-full bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium py-2.5 rounded-lg transition-colors border border-purple-300">
+                            <i class="fas fa-ticket-alt mr-2"></i>
+                            {{ selectedVoucher ? selectedVoucher.code : 'Chọn voucher' }}
+                        </button>
+                        <!-- Voucher validation warning -->
+                        <div v-if="selectedVoucher && !isVoucherValid"
+                            class="mt-1 text-xs text-red-600 flex items-center">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            Đơn hàng chưa đủ {{ formatCurrency(selectedVoucher.minOrderPrice) }} để áp dụng voucher
+                        </div>
+                    </div>
+
+                    <!-- Payment Method Selection -->
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phương thức thanh toán</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button @click="paymentMethod = 0" :class="[
+                                'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
+                                paymentMethod === 0
+                                    ? 'bg-blue-500 text-white border-blue-500'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            ]">
+                                <i class="fas fa-money-bill-wave mr-1"></i>
+                                Tiền mặt
+                            </button>
+                            <button @click="paymentMethod = 1" :class="[
+                                'px-3 py-2 rounded-lg text-sm font-medium transition-colors border',
+                                paymentMethod === 1
+                                    ? 'bg-blue-500 text-white border-blue-500'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            ]">
+                                <i class="fas fa-credit-card mr-1"></i>
+                                VNPay
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Payment Button -->
+                    <button @click="showPaymentModal = true" :disabled="processing"
+                        class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-3 rounded-lg transition-colors">
+                        <i class="fas fa-credit-card mr-2"></i>
+                        Thanh toán
+                    </button>
                 </div>
             </div>
         </div>
@@ -312,6 +369,227 @@
                 <ReceiptModal :order="lastCompletedOrder" @close="showReceiptModal = false" />
             </div>
         </div>
+
+        <!-- Customer Selection Modal -->
+        <div v-if="showCustomerModal"
+            class="fixed inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-50"
+            @click="showCustomerModal = false">
+            <div class="bg-white rounded-lg max-w-md w-full mx-4" @click.stop>
+                <div class="p-6">
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">Chọn khách hàng</h3>
+                        <button @click="showCustomerModal = false" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <!-- Customer Options -->
+                    <div class="space-y-4">
+                        <!-- Walk-in Customer -->
+                        <button @click="selectWalkInCustomer"
+                            class="w-full p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left transition-colors">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-walking text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">Khách vãng lai</h4>
+                                    <p class="text-sm text-gray-500">Khách hàng không cần thông tin</p>
+                                </div>
+                            </div>
+                        </button>
+
+                        <!-- Add New Customer -->
+                        <button @click="showAddCustomerForm = true"
+                            class="w-full p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left transition-colors">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-user-plus text-green-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">Thêm khách hàng mới</h4>
+                                    <p class="text-sm text-gray-500">Tạo thông tin khách hàng mới</p>
+                                </div>
+                            </div>
+                        </button>
+
+                        <!-- Search Existing Customer -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-search text-orange-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">Tìm khách hàng</h4>
+                                    <p class="text-sm text-gray-500">Tìm theo số điện thoại hoặc email</p>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <input v-model="customerSearchQuery" @input="searchCustomers" type="text"
+                                    placeholder="Nhập số điện thoại hoặc email..."
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                                <i v-if="!searchingCustomers"
+                                    class="fas fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                <i v-else
+                                    class="fas fa-spinner fa-spin absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-500"></i>
+                            </div>
+
+                            <!-- Search Results -->
+                            <div v-if="customerSearchResults.length > 0" class="mt-3 max-h-40 overflow-y-auto">
+                                <div v-for="customer in customerSearchResults" :key="customer.id"
+                                    @click="selectCustomer(customer)"
+                                    class="p-3 hover:bg-gray-50 cursor-pointer rounded-lg border border-gray-100 mb-2">
+                                    <div class="font-medium text-gray-900">{{ customer.name }}</div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ customer.phone }} • {{ customer.email }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="customerSearchQuery && customerSearchResults.length === 0 && !searchingCustomers"
+                                class="mt-3 text-sm text-gray-500">
+                                Không tìm thấy khách hàng nào
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Customer Form -->
+                <div v-if="showAddCustomerForm" class="border-t p-6">
+                    <h4 class="font-medium text-gray-900 mb-4">Thông tin khách hàng mới</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Họ tên *</label>
+                            <input v-model="newCustomer.name" type="text"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại *</label>
+                            <input v-model="newCustomer.phone" type="tel"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input v-model="newCustomer.email" type="email"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        </div>
+                        <div class="flex gap-3">
+                            <button @click="createNewCustomer" :disabled="!newCustomer.name || !newCustomer.phone"
+                                class="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white py-2 rounded-lg">
+                                Thêm khách hàng
+                            </button>
+                            <button @click="showAddCustomerForm = false"
+                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg">
+                                Hủy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Voucher Selection Modal -->
+        <div v-if="showVoucherModal" class="fixed inset-0 bg-white bg-opacity-20 flex items-center justify-center z-50"
+            @click="showVoucherModal = false">
+            <div class="bg-white rounded-lg max-w-md w-full mx-4 shadow-lg" @click.stop>
+                <div class="p-6">
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">Chọn voucher</h3>
+                        <button @click="showVoucherModal = false" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <!-- No Voucher Option -->
+                    <button @click="selectVoucher(null)"
+                        class="w-full p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left transition-colors mb-3">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-times text-gray-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">Không sử dụng voucher</h4>
+                                <p class="text-sm text-gray-500">Bỏ qua giảm giá</p>
+                            </div>
+                        </div>
+                    </button>
+
+                    <!-- Available Vouchers -->
+                    <div class="space-y-3 max-h-60 overflow-y-auto">
+                        <!-- Loading State -->
+                        <div v-if="loadingVouchers" class="flex items-center justify-center py-4">
+                            <i class="fas fa-spinner fa-spin text-gray-400 mr-2"></i>
+                            <span class="text-gray-500">Đang tải voucher...</span>
+                        </div>
+
+                        <!-- No Vouchers -->
+                        <div v-else-if="!voucherStore.vouchers || voucherStore.vouchers.length === 0"
+                            class="text-center py-4">
+                            <i class="fas fa-ticket-alt text-gray-400 text-2xl mb-2"></i>
+                            <p class="text-gray-500">Không có voucher phù hợp</p>
+                        </div>
+
+                        <!-- Voucher List -->
+                        <button v-else v-for="voucher in voucherStore.vouchers" :key="voucher.voucherId"
+                            @click="selectVoucher(voucher)"
+                            class="w-full p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left transition-colors">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center mr-3" :class="{
+                                    'bg-purple-100': voucher.type === 'Percentage',
+                                    'bg-green-100': voucher.type === 'Amount'
+                                }">
+                                    <i :class="{
+                                        'fas fa-percent text-purple-600': voucher.type === 'Percentage',
+                                        'fas fa-money-bill-wave text-green-600': voucher.type === 'Amount'
+                                    }"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-gray-900">{{ voucher.code }}</h4>
+                                    <p class="text-sm text-gray-500">
+                                        {{ voucher.type === 'Percentage'
+                                            ? `Giảm ${voucher.discountAmount}% tối đa
+                                        ${formatCurrency(voucher.maxDiscountPrice || 0)}`
+                                            : `Giảm ${formatCurrency(voucher.discountAmount)}`
+                                        }}
+                                    </p>
+                                    <p class="text-xs text-gray-400">
+                                        Đơn tối thiểu: {{ formatCurrency(voucher.minOrderPrice || 0) }}
+                                    </p>
+                                    <p class="text-xs text-blue-600">
+                                        Còn lại: {{ voucher.quantity }} voucher
+                                    </p>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div class="fixed top-4 right-4 z-50 space-y-2">
+            <div v-for="toast in toasts" :key="toast.id"
+                class="flex items-center p-4 mb-4 text-sm rounded-lg shadow-lg transition-all duration-300 ease-in-out transform"
+                :class="{
+                    'text-green-800 bg-green-50 border border-green-200': toast.type === 'success',
+                    'text-red-800 bg-red-50 border border-red-200': toast.type === 'error',
+                    'text-blue-800 bg-blue-50 border border-blue-200': toast.type === 'info',
+                    'text-yellow-800 bg-yellow-50 border border-yellow-200': toast.type === 'warning'
+                }">
+                <i :class="{
+                    'fas fa-check-circle text-green-500': toast.type === 'success',
+                    'fas fa-times-circle text-red-500': toast.type === 'error',
+                    'fas fa-info-circle text-blue-500': toast.type === 'info',
+                    'fas fa-exclamation-triangle text-yellow-500': toast.type === 'warning'
+                }" class="mr-3"></i>
+                <span class="font-medium">{{ toast.message }}</span>
+                <button @click="removeToast(toast.id)" class="ml-auto text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -323,6 +601,8 @@ import { useFoodStore } from '@/stores/foodStore'
 import { useComboStore } from '@/stores/comboStore'
 import { useOrderStore } from '@/stores/orderStore'
 import { useCartStore } from '@/stores/cartStore'
+import { useCustomerStore } from '@/stores/userStore'
+import { useVoucherStore } from '@/stores/voucherStore'
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import PaymentModal from '@/components/PaymentModal.vue'
 
@@ -331,6 +611,8 @@ const foodStore = useFoodStore()
 const comboStore = useComboStore()
 const orderStore = useOrderStore()
 const cartStore = useCartStore()
+const customerStore = useCustomerStore()
+const voucherStore = useVoucherStore()
 
 // Data
 const loading = ref(false)
@@ -340,16 +622,36 @@ const searchResults = ref([])
 const isSearching = ref(false)
 const cartItems = ref([])
 const customerName = ref('')
-const paymentMethod = ref('cash')
+const paymentMethod = ref(0) // 0 = Cash, 1 = VNPay
 const showSuccessModal = ref(false)
 const showReceiptModal = ref(false)
 const showPaymentModal = ref(false)
+const showCustomerModal = ref(false)
+const showAddCustomerForm = ref(false)
+const showVoucherModal = ref(false)
+const selectedVoucher = ref(null)
+const loadingVouchers = ref(false)
 const lastOrderId = ref('')
 const lastCompletedOrder = ref(null)
 const currentCartId = ref(null)
 const creatingTemp = ref(false)
 const loadingTempCarts = ref(false)
 const temporaryCarts = computed(() => cartStore.temporaryCarts)
+
+// Customer related data
+const selectedCustomer = ref(null)
+const customerSearchQuery = ref('')
+const customerSearchResults = ref([])
+const searchingCustomers = ref(false)
+const newCustomer = ref({
+    name: '',
+    phone: '',
+    email: ''
+})
+
+// Toast notifications
+const toasts = ref([])
+let toastIdCounter = 0
 
 const allItems = computed(() => {
     // Always use search results if available (including empty search for all items)
@@ -409,8 +711,36 @@ const subtotal = computed(() => {
     return cartItems.value.reduce((sum, item) => sum + ((item.finalPrice || item.price) * item.quantity), 0)
 })
 
+// Voucher validation
+const isVoucherValid = computed(() => {
+    if (!selectedVoucher.value) return true
+    return subtotal.value >= (selectedVoucher.value.minOrderPrice || 0)
+})
+
+// Voucher discount calculation
+const voucherDiscount = computed(() => {
+    if (!selectedVoucher.value || !isVoucherValid.value) return 0
+
+    const voucher = selectedVoucher.value
+    const orderTotal = subtotal.value
+
+    let discount = 0
+    if (voucher.type === 'Percentage') {
+        discount = orderTotal * (voucher.discountAmount / 100)
+        // Apply max discount limit if exists
+        if (voucher.maxDiscountPrice && discount > voucher.maxDiscountPrice) {
+            discount = voucher.maxDiscountPrice
+        }
+    } else if (voucher.type === 'Amount') {
+        discount = voucher.discountAmount
+    }
+
+    // Discount cannot exceed order total
+    return Math.min(discount, orderTotal)
+})
+
 const total = computed(() => {
-    return subtotal.value // Total is just the subtotal (no tax)
+    return Math.max(0, subtotal.value - voucherDiscount.value)
 })
 
 const totalItems = computed(() => {
@@ -441,6 +771,18 @@ const getFinalPrice = (item) => {
     return item.price
 }
 
+// Payment method helper functions
+const getPaymentMethodText = (method) => {
+    switch (method) {
+        case 0:
+            return 'Tiền mặt'
+        case 1:
+            return 'VNPay'
+        default:
+            return 'Tiền mặt'
+    }
+}
+
 // Search functionality
 let searchTimeout = null
 const performSearch = async (query) => {
@@ -467,6 +809,30 @@ const debouncedSearch = (query) => {
     }, 300) // 300ms delay
 }
 
+// Toast notification functions
+const showToast = (message, type = 'info', duration = 5000) => {
+    const id = ++toastIdCounter
+    const toast = { id, message, type }
+    toasts.value.push(toast)
+
+    // Auto remove toast after duration
+    setTimeout(() => {
+        removeToast(id)
+    }, duration)
+}
+
+const removeToast = (id) => {
+    const index = toasts.value.findIndex(toast => toast.id === id)
+    if (index > -1) {
+        toasts.value.splice(index, 1)
+    }
+}
+
+const showSuccessToast = (message) => showToast(message, 'success')
+const showErrorToast = (message) => showToast(message, 'error')
+const showInfoToast = (message) => showToast(message, 'info')
+const showWarningToast = (message) => showToast(message, 'warning')
+
 // Methods
 const loadData = async () => {
     loading.value = true
@@ -484,18 +850,18 @@ const loadData = async () => {
 
 const addToCart = async (item) => {
     if (!currentCartId.value) {
-        alert('Vui lòng tạo đơn mới hoặc chọn đơn có sẵn trước khi thêm sản phẩm')
+        showWarningToast('Vui lòng tạo đơn mới hoặc chọn đơn có sẵn trước khi thêm sản phẩm')
         return
     }
 
     // Check if item is available
     if (!item.status) {
-        alert('Sản phẩm này đã ngừng bán')
+        showWarningToast('Sản phẩm này đã ngừng bán')
         return
     }
 
     if (item.quantity <= 0) {
-        alert('Sản phẩm này đã hết hàng')
+        showWarningToast('Sản phẩm này đã hết hàng')
         return
     }
 
@@ -515,7 +881,7 @@ const addToCart = async (item) => {
         await syncCartFromBackend()
     } catch (error) {
         console.error('Error adding to cart:', error)
-        alert('Có lỗi khi thêm sản phẩm vào giỏ hàng')
+        showErrorToast('Có lỗi khi thêm sản phẩm vào giỏ hàng')
     }
 }
 
@@ -535,7 +901,7 @@ const removeFromCart = async (itemId) => {
         await syncCartFromBackend()
     } catch (error) {
         console.error('Error removing item from cart:', error)
-        alert('Có lỗi khi xóa sản phẩm khỏi giỏ hàng')
+        showErrorToast('Có lỗi khi xóa sản phẩm khỏi giỏ hàng')
     }
 }
 
@@ -593,15 +959,41 @@ const decreaseQuantity = async (itemId) => {
 const clearCart = () => {
     cartItems.value = []
     customerName.value = ''
+    // Keep selectedCustomer so the name stays on the button
+    // selectedCustomer.value = null
+    selectedVoucher.value = null
     showSuccessModal.value = false
     showReceiptModal.value = false
     showPaymentModal.value = false
+    showCustomerModal.value = false
+    showAddCustomerForm.value = false
+    showVoucherModal.value = false
 }
 
 const loadTemporaryCarts = async () => {
     loadingTempCarts.value = true
     try {
         await cartStore.fetchTemporaryCarts()
+
+        // Load customer names for carts that have userId
+        for (const cart of cartStore.temporaryCarts) {
+            if (cart.userId && !cart.customerName) {
+                try {
+                    // Get customer info by userId
+                    await customerStore.fetchCustomers({
+                        pageSize: 1000 // Get all customers to find by ID
+                    })
+
+                    const customer = customerStore.customers.find(c => c.id === cart.userId)
+                    if (customer) {
+                        // Add customer name to cart object
+                        cart.customerName = customer.fullName
+                    }
+                } catch (customerError) {
+                    console.error(`Error loading customer for cart ${cart.cartId}:`, customerError)
+                }
+            }
+        }
     } catch (error) {
         console.error('Error loading temporary carts:', error)
         alert('Có lỗi khi tải danh sách đơn hàng chờ')
@@ -659,7 +1051,7 @@ const handleCreateTemporaryOrder = async () => {
         // Start fresh for the new temporary order
         cartItems.value = []
         customerName.value = ''
-        paymentMethod.value = 'cash'
+        paymentMethod.value = 0 // Default to cash
 
         // Reload temporary carts list to include the new one
         await loadTemporaryCarts()
@@ -687,15 +1079,15 @@ const handleDeleteTemporaryCart = async (tempCart) => {
             currentCartId.value = null
             cartItems.value = []
             customerName.value = ''
-            paymentMethod.value = 'cash'
+            paymentMethod.value = 0 // Default to cash
         }
 
         // Show success message
-        alert('Đã xóa đơn hàng thành công!')
+        showSuccessToast('Đã xóa đơn hàng thành công!')
 
     } catch (error) {
         console.error('Error deleting temporary cart:', error)
-        alert('Không thể xóa đơn hàng. Vui lòng thử lại.')
+        showErrorToast('Không thể xóa đơn hàng. Vui lòng thử lại.')
     }
 }
 
@@ -709,10 +1101,13 @@ const handlePaymentConfirm = async (paymentData) => {
         paymentMethod.value = paymentData.paymentMethod
 
         const orderData = {
-            customerName: paymentData.customerName || 'Khách hàng tại quầy',
+            customerName: selectedCustomer.value?.name || paymentData.customerName || 'Khách hàng tại quầy',
             paymentMethod: paymentData.paymentMethod,
             customerPaid: paymentData.customerPaid,
             change: paymentData.change,
+            customer: selectedCustomer.value,
+            voucher: selectedVoucher.value,
+            voucherDiscount: voucherDiscount.value,
             items: cartItems.value.map(item => ({
                 id: item.id,
                 name: item.name,
@@ -758,8 +1153,11 @@ const saveOrder = async () => {
 
     try {
         const orderData = {
-            customerName: customerName.value || 'Khách hàng tại quầy',
+            customerName: selectedCustomer.value?.name || customerName.value || 'Khách hàng tại quầy',
             paymentMethod: paymentMethod.value,
+            customer: selectedCustomer.value,
+            voucher: selectedVoucher.value,
+            voucherDiscount: voucherDiscount.value,
             items: cartItems.value.map(item => ({
                 id: item.id,
                 name: item.name,
@@ -779,19 +1177,244 @@ const saveOrder = async () => {
         const result = await orderStore.submitOrder(orderData)
         if (result.success) {
             clearCart()
-            alert('Đơn hàng đã được lưu thành công!')
+            showSuccessToast('Đơn hàng đã được lưu thành công!')
         } else {
             throw new Error(result.message || 'Lưu đơn hàng thất bại')
         }
     } catch (error) {
         console.error('Error saving order:', error)
-        alert('Có lỗi xảy ra khi lưu đơn hàng. Vui lòng thử lại.')
+        showErrorToast('Có lỗi xảy ra khi lưu đơn hàng. Vui lòng thử lại.')
+    }
+}
+
+// Voucher related methods
+const loadVouchers = async () => {
+    loadingVouchers.value = true
+    try {
+        // Set filters for active vouchers with appropriate minOrderAmount
+        voucherStore.setFilters({
+            isActive: true,
+            minOrderAmount: subtotal.value || 0
+        })
+
+        await voucherStore.fetchVouchers()
+    } catch (error) {
+        console.error('Error loading vouchers:', error)
+        showErrorToast('Không thể tải danh sách voucher')
+    } finally {
+        loadingVouchers.value = false
+    }
+}
+
+const openVoucherModal = async () => {
+    showVoucherModal.value = true
+    await loadVouchers()
+}
+
+const selectVoucher = (voucher) => {
+    selectedVoucher.value = voucher
+    showVoucherModal.value = false
+    if (voucher) {
+        showSuccessToast(`Đã chọn voucher: ${voucher.code}`)
+        // Show discount amount info
+        if (voucher.type === 'Percentage') {
+            showInfoToast(`Giảm ${voucher.discountAmount}% (tối đa ${formatCurrency(voucher.maxDiscountPrice || 0)})`)
+        } else {
+            showInfoToast(`Giảm ${formatCurrency(voucher.discountAmount)}`)
+        }
+    } else {
+        showInfoToast('Đã bỏ chọn voucher')
+    }
+}
+
+// Customer related methods
+const selectWalkInCustomer = async () => {
+    try {
+        searchingCustomers.value = true
+
+        // Call API to get walk-in customer by email using customerStore
+        await customerStore.fetchCustomers({
+            email: 'customer@example.com',
+            pageSize: 1
+        })
+
+        if (customerStore.customers && customerStore.customers.length > 0) {
+            // Use the first customer found with the email and map fields correctly
+            const customer = customerStore.customers[0]
+            selectedCustomer.value = {
+                id: customer.id,
+                name: customer.fullName,
+                phone: customer.phoneNumber,
+                email: customer.email,
+                userName: customer.userName,
+                emailConfirmed: customer.emailConfirmed,
+                phoneNumberConfirmed: customer.phoneNumberConfirmed
+            }
+
+            // Assign cart to the walk-in customer if there's a current cart
+            if (currentCartId.value && customer.id) {
+                try {
+                    const result = await cartStore.assignCartToUser(currentCartId.value, customer.id)
+                    console.log('Successfully assigned cart to walk-in customer')
+                    if (result && result.message) {
+                        showSuccessToast(result.message)
+                    } else {
+                        showSuccessToast('Đã gán giỏ hàng cho khách vãng lai')
+                    }
+
+                    // Reload temporary carts to get updated data
+                    await loadTemporaryCarts()
+                } catch (assignError) {
+                    console.error('Error assigning cart to walk-in customer:', assignError)
+                    // Show error message from API response
+                    const errorMessage = assignError.response?.data?.message || 'Không thể gán giỏ hàng cho khách hàng. Vui lòng thử lại.'
+                    showErrorToast(errorMessage)
+                    // Don't throw error here, customer selection should still work
+                }
+            }
+        } else {
+            // Fallback to default walk-in customer if no customer found
+            selectedCustomer.value = {
+                id: 'walk-in',
+                name: 'Khách vãng lai',
+                phone: '',
+                email: 'customer@example.com'
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching walk-in customer:', error)
+        // Fallback to default walk-in customer on error
+        selectedCustomer.value = {
+            id: 'walk-in',
+            name: 'Khách vãng lai',
+            phone: '',
+            email: 'customer@example.com'
+        }
+    } finally {
+        searchingCustomers.value = false
+        showCustomerModal.value = false
+        showAddCustomerForm.value = false
+    }
+}
+
+const selectCustomer = async (customer) => {
+    try {
+        selectedCustomer.value = customer
+
+        // Assign cart to the selected customer if there's a current cart
+        if (currentCartId.value && customer.id) {
+            try {
+                const result = await cartStore.assignCartToUser(currentCartId.value, customer.id)
+                console.log('Successfully assigned cart to selected customer:', customer.name)
+                if (result && result.message) {
+                    showSuccessToast(result.message)
+                } else {
+                    showSuccessToast(`Đã gán giỏ hàng cho khách hàng ${customer.name}`)
+                }
+
+                // Reload temporary carts to get updated data with customer info
+                await loadTemporaryCarts()
+            } catch (assignError) {
+                console.error('Error assigning cart to customer:', assignError)
+                // Show error message from API response
+                const errorMessage = assignError.response?.data?.message || 'Không thể gán giỏ hàng cho khách hàng. Vui lòng thử lại.'
+                showErrorToast(errorMessage)
+                // Don't throw error here, customer selection should still work
+            }
+        }
+
+        showCustomerModal.value = false
+        customerSearchQuery.value = ''
+        customerSearchResults.value = []
+    } catch (error) {
+        console.error('Error selecting customer:', error)
+    }
+}
+
+let customerSearchTimeout = null
+const searchCustomers = async () => {
+    const query = customerSearchQuery.value.trim()
+
+    if (!query) {
+        customerSearchResults.value = []
+        return
+    }
+
+    if (customerSearchTimeout) {
+        clearTimeout(customerSearchTimeout)
+    }
+
+    customerSearchTimeout = setTimeout(async () => {
+        searchingCustomers.value = true
+        try {
+            // Call API to search customers using customerStore
+            await customerStore.fetchCustomers({
+                searchTerm: query, // Search by name, email, or phone
+                pageSize: 10 // Limit results for better performance
+            })
+
+            // Map the customers to match the expected format
+            customerSearchResults.value = customerStore.customers.map(customer => ({
+                id: customer.id,
+                name: customer.fullName,
+                phone: customer.phoneNumber,
+                email: customer.email,
+                userName: customer.userName,
+                emailConfirmed: customer.emailConfirmed,
+                phoneNumberConfirmed: customer.phoneNumberConfirmed
+            }))
+        } catch (error) {
+            console.error('Error searching customers:', error)
+            customerSearchResults.value = []
+        } finally {
+            searchingCustomers.value = false
+        }
+    }, 300)
+}
+
+const createNewCustomer = async () => {
+    if (!newCustomer.value.name || !newCustomer.value.phone) {
+        showWarningToast('Vui lòng nhập họ tên và số điện thoại')
+        return
+    }
+
+    try {
+        // TODO: Replace with actual customer creation API
+        const createdCustomer = {
+            id: Date.now(), // Temporary ID
+            name: newCustomer.value.name,
+            phone: newCustomer.value.phone,
+            email: newCustomer.value.email || ''
+        }
+
+        selectedCustomer.value = createdCustomer
+        showCustomerModal.value = false
+        showAddCustomerForm.value = false
+
+        // Reset form
+        newCustomer.value = {
+            name: '',
+            phone: '',
+            email: ''
+        }
+
+        showSuccessToast('Đã thêm khách hàng thành công!')
+    } catch (error) {
+        console.error('Error creating customer:', error)
+        showErrorToast('Có lỗi khi tạo khách hàng. Vui lòng thử lại.')
     }
 }
 
 // Watchers
 watch(searchQuery, (newQuery) => {
     debouncedSearch(newQuery)
+})
+
+// Watch subtotal changes to validate voucher
+watch(subtotal, (newSubtotal) => {
+    if (selectedVoucher.value && newSubtotal < (selectedVoucher.value.minOrderPrice || 0)) {
+        showWarningToast(`Voucher yêu cầu đơn hàng tối thiểu ${formatCurrency(selectedVoucher.value.minOrderPrice)}`)
+    }
 })
 
 // Lifecycle
