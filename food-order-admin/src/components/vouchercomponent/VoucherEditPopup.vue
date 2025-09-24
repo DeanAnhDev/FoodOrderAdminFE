@@ -51,7 +51,8 @@
         <div>
           <label class="block text-sm font-medium mb-1">Giảm tối đa</label>
           <input v-model.number="form.maxDiscountPrice" type="number" min="0"
-            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none" />
+            class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-200 outline-none disabled:bg-gray-100 disabled:text-gray-500"
+            :disabled="form.type === 'Amount'" />
         </div>
 
         <!-- Ngày bắt đầu & kết thúc -->
@@ -138,6 +139,13 @@ watch(
   },
   { immediate: true }
 )
+
+// Reset maxDiscountPrice khi chuyển sang loại "Amount"
+watch(() => form.value.type, (newType) => {
+  if (newType === 'Amount') {
+    form.value.maxDiscountPrice = 0
+  }
+})
 
 const isSubmitting = ref(false)
 

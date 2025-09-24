@@ -117,7 +117,7 @@
                             <div v-if="!item.status || item.quantity <= 0"
                                 class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
                                 <span class="text-white font-bold text-sm">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
-                                    }}</span>
+                                }}</span>
                             </div>
 
                             <!-- Promotion badge -->
@@ -383,7 +383,7 @@
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Thanh toán thành công!</h3>
                     <p class="text-gray-600 mb-4">
-                        Đơn hàng #{{ lastOrderId }} đã được thanh toán thành công.
+                        Đơn hàng đã được thanh toán thành công.
                     </p>
                     <div class="flex space-x-3">
                         <!-- <button @click="showReceiptModal = true"
@@ -498,21 +498,25 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Họ tên *</label>
-                            <input v-model="newCustomer.name" type="text"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                            <input v-model="newCustomer.fullName" type="text"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Nhập họ tên đầy đủ" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại *</label>
-                            <input v-model="newCustomer.phone" type="tel"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                            <input v-model="newCustomer.phoneNumber" type="tel"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Nhập số điện thoại" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                             <input v-model="newCustomer.email" type="email"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Nhập địa chỉ email" />
                         </div>
                         <div class="flex gap-3">
-                            <button @click="createNewCustomer" :disabled="!newCustomer.name || !newCustomer.phone"
+                            <button @click="createNewCustomer"
+                                :disabled="!newCustomer.fullName || !newCustomer.phoneNumber || !newCustomer.email"
                                 class="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white py-2 rounded-lg">
                                 Thêm khách hàng
                             </button>
@@ -639,6 +643,7 @@ import { useComboStore } from '@/stores/comboStore'
 import { useOrderStore } from '@/stores/orderStore'
 import { useCartStore } from '@/stores/cartStore'
 import { useCustomerStore } from '@/stores/userStore'
+import { useCustomerManagementStore } from '@/stores/customerStore'
 import { useVoucherStore } from '@/stores/voucherStore'
 import ReceiptModal from '@/components/ReceiptModal.vue'
 
@@ -649,6 +654,7 @@ const comboStore = useComboStore()
 const orderStore = useOrderStore()
 const cartStore = useCartStore()
 const customerStore = useCustomerStore()
+const customerManagementStore = useCustomerManagementStore()
 const voucherStore = useVoucherStore()
 
 // Data
@@ -682,8 +688,8 @@ const customerSearchQuery = ref('')
 const customerSearchResults = ref([])
 const searchingCustomers = ref(false)
 const newCustomer = ref({
-    name: '',
-    phone: '',
+    fullName: '',
+    phoneNumber: '',
     email: ''
 })
 
@@ -1518,35 +1524,72 @@ const searchCustomers = async () => {
 }
 
 const createNewCustomer = async () => {
-    if (!newCustomer.value.name || !newCustomer.value.phone) {
+    if (!newCustomer.value.fullName || !newCustomer.value.phoneNumber) {
         showWarningToast('Vui lòng nhập họ tên và số điện thoại')
         return
     }
 
+    if (!newCustomer.value.email) {
+        showWarningToast('Vui lòng nhập email')
+        return
+    }
+
     try {
-        // TODO: Replace with actual customer creation API
-        const createdCustomer = {
-            id: Date.now(), // Temporary ID
-            name: newCustomer.value.name,
-            phone: newCustomer.value.phone,
-            email: newCustomer.value.email || ''
+        // Call API to create customer using customerManagementStore
+        const response = await customerManagementStore.createCustomer({
+            fullName: newCustomer.value.fullName,
+            phoneNumber: newCustomer.value.phoneNumber,
+            email: newCustomer.value.email
+        })
+
+        if (response.data) {
+            // Map the created customer to match the expected format
+            const createdCustomer = {
+                id: response.data.id,
+                name: response.data.fullName,
+                phone: response.data.phoneNumber,
+                email: response.data.email,
+                userName: response.data.userName,
+                emailConfirmed: response.data.emailConfirmed,
+                phoneNumberConfirmed: response.data.phoneNumberConfirmed
+            }
+
+            selectedCustomer.value = createdCustomer
+
+            // Assign cart to the new customer if there's a current cart
+            if (currentCartId.value && createdCustomer.id) {
+                try {
+                    const result = await cartStore.assignCartToUser(currentCartId.value, createdCustomer.id)
+                    console.log('Successfully assigned cart to new customer:', createdCustomer.name)
+                    if (result && result.message) {
+                        showSuccessToast(result.message)
+                    }
+
+                    // Reload temporary carts to get updated data
+                    await loadTemporaryCarts()
+                } catch (assignError) {
+                    console.error('Error assigning cart to new customer:', assignError)
+                    const errorMessage = assignError.response?.data?.message || 'Không thể gán giỏ hàng cho khách hàng mới'
+                    showErrorToast(errorMessage)
+                }
+            }
+
+            showCustomerModal.value = false
+            showAddCustomerForm.value = false
+
+            // Reset form
+            newCustomer.value = {
+                fullName: '',
+                phoneNumber: '',
+                email: ''
+            }
+
+            showSuccessToast('Đã thêm khách hàng thành công!')
         }
-
-        selectedCustomer.value = createdCustomer
-        showCustomerModal.value = false
-        showAddCustomerForm.value = false
-
-        // Reset form
-        newCustomer.value = {
-            name: '',
-            phone: '',
-            email: ''
-        }
-
-        showSuccessToast('Đã thêm khách hàng thành công!')
     } catch (error) {
         console.error('Error creating customer:', error)
-        showErrorToast('Có lỗi khi tạo khách hàng. Vui lòng thử lại.')
+        const errorMessage = error.response?.data?.message || error.message || 'Có lỗi khi tạo khách hàng. Vui lòng thử lại.'
+        showErrorToast(errorMessage)
     }
 }
 
