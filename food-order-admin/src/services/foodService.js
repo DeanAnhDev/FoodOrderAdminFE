@@ -21,3 +21,9 @@ export const updateFoodStatus = async (id, isActive) => {
     headers: { 'Content-Type': 'application/json' },
   })
 }
+
+export const searchFoodsAndCombos = async (name) => {
+  return axiosClient.get('/Food/search-foods-and-combos', {
+    params: { name },
+  })
+}

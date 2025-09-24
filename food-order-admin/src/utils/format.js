@@ -12,6 +12,13 @@ export const formatMoney = (amount) => {
   }).format(amount)
 }
 
+export const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+  }).format(amount)
+}
+
 export const formatDate = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)

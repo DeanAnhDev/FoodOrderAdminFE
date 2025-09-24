@@ -14,6 +14,12 @@
         Tổng quan
       </router-link>
 
+      <router-link :to="{ name: 'pos' }"
+        class="w-[230px] h-[50px] flex items-center gap-2 font-inter font-extralight text-sm text-left pl-[21px] hover:bg-[#5c6e91] transition">
+        <i class="fa-solid fa-cash-register"></i>
+        Bán hàng tại quầy
+      </router-link>
+
       <router-link to="/billmanagement"
         class="w-[230px] h-[50px] flex items-center gap-2 font-inter font-extralight text-sm text-left pl-[21px] hover:bg-[#5c6e91] transition">
         <i class="fa-solid fa-file-invoice"></i>

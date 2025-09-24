@@ -10,6 +10,7 @@ import VoucherManagementView from '@/views/VoucherManagementView.vue'
 import PromotionManagementView from '@/views/PromotionManagementView.vue'
 import BillManagementView from '@/views/BillManagementView.vue'
 import RevenueView from '@/views/RevenueView.vue'
+import POSView from '@/views/POSView.vue'
 import LoginView from '@/views/LoginView.vue'
 import UnauthorizedView from '@/views/UnauthorizedView.vue'
 import { requireAuth, requireAdmin, requireManager, guestOnly } from '@/middleware/auth'
@@ -45,6 +46,13 @@ const routes = [
         name: 'dashboard',
         component: DashboardView,
         meta: { title: 'Dashboard', requiresAuth: true },
+      },
+      {
+        path: 'pos',
+        name: 'pos',
+        component: POSView,
+        beforeEnter: requireAuth,
+        meta: { title: 'Bán hàng tại quầy', requiresAuth: true },
       },
       {
         path: 'combo',

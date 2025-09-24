@@ -1,11 +1,20 @@
 // src/stores/foodStore.js
 import { defineStore } from 'pinia'
-import { getFoods, addFood, updateFood, deleteFood, updateFoodStatus } from '@/services/foodService'
+import {
+  getFoods,
+  addFood,
+  updateFood,
+  deleteFood,
+  updateFoodStatus,
+  searchFoodsAndCombos,
+} from '@/services/foodService'
 
 export const useFoodStore = defineStore('food', {
   state: () => ({
     foods: [],
+    searchResults: [],
     loading: false,
+    searchLoading: false,
     error: null,
     pagination: {
       page: 1,
@@ -77,6 +86,25 @@ export const useFoodStore = defineStore('food', {
 
     setFilters(filters) {
       this.filters = { ...this.filters, ...filters }
+    },
+
+    async searchFoodsAndCombos(name) {
+      this.searchLoading = true
+      this.error = null
+      try {
+        const response = await searchFoodsAndCombos(name)
+        this.searchResults = response.data.data || []
+        return response.data
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Lỗi khi tìm kiếm sản phẩm'
+        throw err
+      } finally {
+        this.searchLoading = false
+      }
+    },
+
+    clearSearchResults() {
+      this.searchResults = []
     },
   },
 })
