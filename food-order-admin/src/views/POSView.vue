@@ -117,7 +117,7 @@
                             <div v-if="!item.status || item.quantity <= 0"
                                 class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
                                 <span class="text-white font-bold text-sm">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
-                                    }}</span>
+                                }}</span>
                             </div>
 
                             <!-- Promotion badge -->
@@ -1462,10 +1462,10 @@ const selectWalkInCustomer = async () => {
 
                     // Reload temporary carts to get updated data
                     await loadTemporaryCarts()
-                    
+
                     // Update currentSelectedCart with the latest data
                     if (currentCartId.value) {
-                        const updatedCart = cartStore.temporaryCarts.find(cart => 
+                        const updatedCart = cartStore.temporaryCarts.find(cart =>
                             (cart.id || cart.cartId) === currentCartId.value
                         )
                         if (updatedCart) {
@@ -1522,10 +1522,10 @@ const selectCustomer = async (customer) => {
 
                 // Reload temporary carts to get updated data with customer info
                 await loadTemporaryCarts()
-                
+
                 // Update currentSelectedCart with the latest data
                 if (currentCartId.value) {
-                    const updatedCart = cartStore.temporaryCarts.find(cart => 
+                    const updatedCart = cartStore.temporaryCarts.find(cart =>
                         (cart.id || cart.cartId) === currentCartId.value
                     )
                     if (updatedCart) {
@@ -1634,10 +1634,10 @@ const createNewCustomer = async () => {
 
                     // Reload temporary carts to get updated data
                     await loadTemporaryCarts()
-                    
+
                     // Update currentSelectedCart with the latest data
                     if (currentCartId.value) {
-                        const updatedCart = cartStore.temporaryCarts.find(cart => 
+                        const updatedCart = cartStore.temporaryCarts.find(cart =>
                             (cart.id || cart.cartId) === currentCartId.value
                         )
                         if (updatedCart) {
