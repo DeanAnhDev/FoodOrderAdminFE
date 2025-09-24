@@ -117,7 +117,7 @@
                             <div v-if="!item.status || item.quantity <= 0"
                                 class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
                                 <span class="text-white font-bold text-sm">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
-                                }}</span>
+                                    }}</span>
                             </div>
 
                             <!-- Promotion badge -->
@@ -1345,7 +1345,8 @@ const loadVouchers = async () => {
         // Set filters for active vouchers with appropriate minOrderAmount
         voucherStore.setFilters({
             isActive: true,
-            minOrderAmount: subtotal.value || 0
+            minOrderAmount: subtotal.value || 0,
+            isOutOfStock: false
         })
 
         await voucherStore.fetchVouchers()
