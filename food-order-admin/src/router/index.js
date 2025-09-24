@@ -5,6 +5,7 @@ import ComboManagementView from '@/views/ComboManagementView.vue'
 import FoodManagementView from '@/views/FoodManagementView.vue'
 import StaffManagementView from '@/views/StaffManagementView.vue'
 import Layout from '@/layouts/admin/Layout.vue'
+import ShipperLayout from '@/layouts/shipper/Layout.vue'
 import DashboardView from '@/views/DashBoardView.vue'
 import VoucherManagementView from '@/views/VoucherManagementView.vue'
 import PromotionManagementView from '@/views/PromotionManagementView.vue'
@@ -15,6 +16,7 @@ import CheckoutSuccessView from '@/views/CheckoutSuccessView.vue'
 import CheckoutFailedView from '@/views/CheckoutFailedView.vue'
 import LoginView from '@/views/LoginView.vue'
 import UnauthorizedView from '@/views/UnauthorizedView.vue'
+import ShipperView from '@/views/ShipperView.vue'
 import {
   requireAuth,
   requireAdmin,
@@ -51,6 +53,20 @@ const routes = [
     name: 'checkout-failed',
     component: CheckoutFailedView,
     meta: { title: 'Thanh toán thất bại' },
+  },
+
+  // Shipper routes (không cần đăng nhập)
+  {
+    path: '/shipper',
+    component: ShipperLayout,
+    children: [
+      {
+        path: '',
+        name: 'shipper',
+        component: ShipperView,
+        meta: { title: 'Shipper Dashboard - Quản lý giao hàng' },
+      },
+    ],
   },
 
   // Admin routes (cần đăng nhập)

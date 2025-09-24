@@ -110,19 +110,17 @@
                 <div class="flex-1 overflow-y-auto p-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         <div v-for="item in filteredItems" :key="item.id" @click="addToCart(item)" :class="[
-                            'bg-white rounded-lg shadow-sm border border-gray-200 p-3 cursor-pointer hover:shadow-md transition-shadow relative',
-                            !item.status || item.quantity <= 0 ? 'opacity-60' : ''
+                            'bg-white rounded-lg shadow-sm border border-gray-200 p-3 cursor-pointer hover:shadow-md transition-shadow relative'
                         ]">
-                            <!-- Out of stock overlay -->
+                            <!-- Out of stock badge -->
                             <div v-if="!item.status || item.quantity <= 0"
-                                class="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center z-10">
-                                <span class="text-white font-bold text-sm">{{ !item.status ? 'Ngừng bán' : 'Hết hàng'
-                                    }}</span>
+                                class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full z-20">
+                                <span class="font-bold">{{ !item.status ? 'Ngừng bán' : 'Hết hàng' }}</span>
                             </div>
 
                             <!-- Promotion badge -->
                             <div v-if="item.promotion && item.promotion.isActive"
-                                class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full z-20">
+                                class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full z-20">
                                 {{ item.promotion.type === 'Percentage' ? '-' + item.promotion.discountAmount + '%' :
                                     '-' +
                                     formatCurrency(item.promotion.discountAmount) }}
