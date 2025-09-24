@@ -1344,10 +1344,29 @@ const handlePaymentConfirm = async (paymentData) => {
                 showSuccessToast('Thanh toán thành công!')
             }
         } else {
-            throw new Error(result.message || 'Tạo đơn hàng thất bại')
+            // Handle API error response when order creation fails
+            if (result.message) {
+                showErrorToast(result.message)
+                // Sync cart to get updated quantities from backend if needed
+                await syncCartFromBackend()
+                return
+            }
+            throw new Error('Tạo đơn hàng thất bại')
         }
     } catch (error) {
         console.error('Error processing order:', error)
+        
+        // Handle API error response
+        if (error.response && error.response.data) {
+            const errorData = error.response.data
+            if (!errorData.success && errorData.message) {
+                showErrorToast(errorData.message)
+                // Sync cart to get updated quantities from backend
+                await syncCartFromBackend()
+                return
+            }
+        }
+        
         showErrorToast(error.message || 'Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.')
     } finally {
         processing.value = false
