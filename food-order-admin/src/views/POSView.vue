@@ -1405,14 +1405,27 @@ const saveOrder = async () => {
 const loadVouchers = async () => {
     loadingVouchers.value = true
     try {
-        // Set filters for active vouchers with appropriate minOrderAmount
+        // Set filters for active vouchers with appropriate minOrderAmount and valid date
+        const today = new Date().toISOString().split('T')[0] // yyyy-MM-dd format
         voucherStore.setFilters({
             isActive: true,
             minOrderAmount: subtotal.value || 0,
-            isOutOfStock: false
+            isOutOfStock: false,
+            startDate: today // Voucher must have started by today
         })
 
         await voucherStore.fetchVouchers()
+
+        // Additional client-side filtering to ensure voucher start date <= today
+        const validVouchers = voucherStore.vouchers.filter(voucher => {
+            const voucherStartDate = new Date(voucher.startDate).toISOString().split('T')[0]
+            return voucherStartDate <= today
+        })
+
+        // Update the store with filtered vouchers if needed
+        if (validVouchers.length !== voucherStore.vouchers.length) {
+            voucherStore.vouchers = validVouchers
+        }
     } catch (error) {
         console.error('Error loading vouchers:', error)
         showErrorToast('Không thể tải danh sách voucher')

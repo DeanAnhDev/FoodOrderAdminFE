@@ -294,7 +294,10 @@ const submit = async () => {
 
 onMounted(() => {
   categoryStore.fetchCategories()
-  foodStore.fetchFoods()
+  foodStore.fetchFoods({
+    page: 1,
+    pageSize: 1000,
+  })
   promotionStore.fetchPromotions()
 })
 </script>

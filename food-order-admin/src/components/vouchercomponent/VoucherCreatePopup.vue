@@ -127,6 +127,20 @@ watch(() => form.type, (newType) => {
   }
 })
 
+const clearForm = () => {
+  Object.assign(form, {
+    code: "",
+    discountAmount: null,
+    type: 0,
+    quantity: 0,
+    minOrderPrice: 0,
+    maxDiscountPrice: 0,
+    startDate: "",
+    endDate: "",
+    isActive: true,
+  })
+}
+
 const handleSubmit = async () => {
   if (!form.startDate || !form.endDate) {
     toast.error("Vui lòng chọn ngày bắt đầu và kết thúc")
@@ -144,6 +158,7 @@ const handleSubmit = async () => {
     isSubmitting.value = true
     await voucherStore.createVoucher(form)
     toast.success("Tạo voucher thành công!")
+    clearForm()
     close()
   } catch (err) {
     const backendMessage = err.response?.data?.error || 'Tạo voucher thất bại!'

@@ -36,11 +36,25 @@ onMounted(async () => {
     combos.value = comboStore.combos
 })
 
+const clearForm = () => {
+    form.value = {
+        promotionName: '',
+        discountAmount: 0,
+        type: 'Amount',
+        startDate: '',
+        endDate: '',
+        isActive: true,
+        foodIds: [],
+        comboIds: []
+    }
+}
+
 const handleSubmit = async () => {
     try {
         const payload = { ...form.value }
         await promotionStore.createPromotion(payload)
         toast.success("Tạo khuyến mãi thành công 🎉")
+        clearForm()
         emit('created')
         close()
     } catch (error) {

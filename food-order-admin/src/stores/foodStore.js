@@ -32,17 +32,27 @@ export const useFoodStore = defineStore('food', {
   }),
 
   actions: {
-    async fetchFoods() {
+    async fetchFoods(options = {}) {
       this.loading = true
       try {
         const params = {
-          page: this.pagination.page,
-          pageSize: this.pagination.pageSize,
-          sortOrder: this.filters.sortOrder,
-          name: this.filters.name || undefined,
-          categoryName: this.filters.categoryName || undefined,
-          status: this.filters.status !== null ? this.filters.status : undefined,
-          isOutOfStock: this.filters.isOutOfStock !== null ? this.filters.isOutOfStock : undefined,
+          page: options.page || this.pagination.page,
+          pageSize: options.pageSize || this.pagination.pageSize,
+          sortOrder: options.sortOrder || this.filters.sortOrder,
+          name: options.name || this.filters.name || undefined,
+          categoryName: options.categoryName || this.filters.categoryName || undefined,
+          status:
+            options.status !== undefined
+              ? options.status
+              : this.filters.status !== null
+                ? this.filters.status
+                : undefined,
+          isOutOfStock:
+            options.isOutOfStock !== undefined
+              ? options.isOutOfStock
+              : this.filters.isOutOfStock !== null
+                ? this.filters.isOutOfStock
+                : undefined,
         }
 
         const response = await getFoods(params)
