@@ -25,8 +25,7 @@
           <label class="block text-sm font-medium">Khuyến mãi (tuỳ chọn)</label>
           <select v-model="form.promotionId" class="w-full border p-2 rounded">
             <option :value="null">-- Không áp dụng --</option>
-            <option v-for="promo in promotionStore.promotions.filter(p => p.isActive)" :key="promo.promotionId"
-              :value="promo.promotionId">
+            <option v-for="promo in validPromotions" :key="promo.promotionId" :value="promo.promotionId">
               🎁 {{ promo.promotionName }} -
               Giảm {{ promo.discountAmount }}{{ promo.type === 'Percentage' ? '%' : '₫' }}
             </option>
@@ -108,7 +107,7 @@
 </style>
 
 <script setup>
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useUploadStore } from '@/stores/uploadStore'
 import { useCategoryStore } from '@/stores/categoryStore'
@@ -140,6 +139,20 @@ const form = ref({
     name: ''
   },
   promotionId: null,
+})
+
+// Computed property để lọc khuyến mãi hợp lệ
+const validPromotions = computed(() => {
+  const today = new Date()
+  return promotionStore.promotions.filter(promo => {
+    if (!promo.isActive) return false
+
+    const startDate = new Date(promo.startDate)
+    const endDate = new Date(promo.endDate)
+
+    // Khuyến mãi phải đã bắt đầu và chưa kết thúc
+    return startDate <= today && endDate >= today
+  })
 })
 
 // Tải danh mục nếu chưa có

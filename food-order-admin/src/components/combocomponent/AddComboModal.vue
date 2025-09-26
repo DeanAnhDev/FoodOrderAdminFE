@@ -36,8 +36,7 @@
             <select v-model="form.promotionId"
               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition text-gray-700">
               <option :value="null">🎁 Chọn khuyến mãi (tuỳ chọn)</option>
-              <option v-for="promo in promotionStore.promotions.filter(p => p.isActive)" :key="promo.promotionId"
-                :value="promo.promotionId">
+              <option v-for="promo in validPromotions" :key="promo.promotionId" :value="promo.promotionId">
                 {{ promo.promotionName }} - Giảm {{ promo.discountAmount }}{{ promo.type === 'Percentage' ? '%' : '₫' }}
               </option>
             </select>
@@ -190,6 +189,20 @@ const form = ref({
   quantity: 1,
   foods: [],
   promotionId: null
+})
+
+// Computed property để lọc khuyến mãi hợp lệ
+const validPromotions = computed(() => {
+  const today = new Date()
+  return promotionStore.promotions.filter(promo => {
+    if (!promo.isActive) return false
+
+    const startDate = new Date(promo.startDate)
+    const endDate = new Date(promo.endDate)
+
+    // Khuyến mãi phải đã bắt đầu và chưa kết thúc
+    return startDate <= today && endDate >= today
+  })
 })
 
 const resetForm = () => {

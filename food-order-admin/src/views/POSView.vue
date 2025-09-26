@@ -377,7 +377,7 @@
 
         <!-- Success Modal -->
         <div v-if="showSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            @click="showSuccessModal = false">
+            @click="handleCloseSuccessModal">
             <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4" @click.stop>
                 <div class="text-center">
                     <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -392,7 +392,7 @@
                             class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">
                             In hóa đơn
                         </button> -->
-                        <button @click="showSuccessModal = false"
+                        <button @click="handleCloseSuccessModal"
                             class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg">
                             Đóng
                         </button>
@@ -568,14 +568,13 @@
                         </div>
 
                         <!-- No Vouchers -->
-                        <div v-else-if="!voucherStore.vouchers || voucherStore.vouchers.length === 0"
-                            class="text-center py-4">
+                        <div v-else-if="!availableVouchers || availableVouchers.length === 0" class="text-center py-4">
                             <i class="fas fa-ticket-alt text-gray-400 text-2xl mb-2"></i>
                             <p class="text-gray-500">Không có voucher phù hợp</p>
                         </div>
 
                         <!-- Voucher List -->
-                        <button v-else v-for="voucher in voucherStore.vouchers" :key="voucher.voucherId"
+                        <button v-else v-for="voucher in availableVouchers" :key="voucher.voucherId"
                             @click="selectVoucher(voucher)"
                             class="w-full p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left transition-colors">
                             <div class="flex items-center">
@@ -647,6 +646,7 @@ import { useCartStore } from '@/stores/cartStore'
 import { useCustomerStore } from '@/stores/userStore'
 import { useCustomerManagementStore } from '@/stores/customerStore'
 import { useVoucherStore } from '@/stores/voucherStore'
+import { getVouchers } from '@/services/voucherService'
 import ReceiptModal from '@/components/ReceiptModal.vue'
 
 const router = useRouter()
@@ -676,6 +676,7 @@ const showAddCustomerForm = ref(false)
 const showVoucherModal = ref(false)
 const selectedVoucher = ref(null)
 const loadingVouchers = ref(false)
+const availableVouchers = ref([]) // Local voucher list for POS only
 const lastOrderId = ref('')
 const lastCompletedOrder = ref(null)
 const currentCartId = ref(null)
@@ -921,6 +922,13 @@ const showSuccessToast = (message) => showToast(message, 'success')
 const showErrorToast = (message) => showToast(message, 'error')
 const showInfoToast = (message) => showToast(message, 'info')
 const showWarningToast = (message) => showToast(message, 'warning')
+
+// Handle closing success modal and reload data
+const handleCloseSuccessModal = async () => {
+    showSuccessModal.value = false
+    // Reload food and combo data to get latest quantities
+    await performSearch('')
+}
 
 // Methods
 const loadData = async () => {
@@ -1338,6 +1346,8 @@ const handlePaymentConfirm = async (paymentData) => {
                 clearCart()
                 // Load lại danh sách hóa đơn chờ sau khi thanh toán thành công
                 await loadTemporaryCarts()
+                // Reload food data to get latest quantities after payment
+                await performSearch('')
                 showSuccessModal.value = true
                 showSuccessToast('Thanh toán thành công!')
             }
@@ -1405,27 +1415,21 @@ const saveOrder = async () => {
 const loadVouchers = async () => {
     loadingVouchers.value = true
     try {
-        // Set filters for active vouchers with appropriate minOrderAmount and valid date
+        // Call API directly to avoid affecting shared voucherStore state
         const today = new Date().toISOString().split('T')[0] // yyyy-MM-dd format
-        voucherStore.setFilters({
+        const params = {
+            page: 1,
+            pageSize: 100, // Get enough vouchers for POS
             isActive: true,
             minOrderAmount: subtotal.value || 0,
             isOutOfStock: false,
-            startDate: today // Voucher must have started by today
-        })
-
-        await voucherStore.fetchVouchers()
-
-        // Additional client-side filtering to ensure voucher start date <= today
-        const validVouchers = voucherStore.vouchers.filter(voucher => {
-            const voucherStartDate = new Date(voucher.startDate).toISOString().split('T')[0]
-            return voucherStartDate <= today
-        })
-
-        // Update the store with filtered vouchers if needed
-        if (validVouchers.length !== voucherStore.vouchers.length) {
-            voucherStore.vouchers = validVouchers
+            startDateTo: today, // Voucher must have started by today (startDate <= today)
+            endDateFrom: today  // Voucher must still be valid (endDate >= today)
         }
+
+        const response = await getVouchers(params)
+        // Store vouchers in local state to avoid affecting shared voucherStore
+        availableVouchers.value = response.data.items || []
     } catch (error) {
         console.error('Error loading vouchers:', error)
         showErrorToast('Không thể tải danh sách voucher')
